@@ -8,13 +8,12 @@ Inspired by [Schedulo — Waitlist View in Calendar Appointment Booking App by B
 
 ## 🚀 Portals & Roles
 
-### 1. 🚪 Role Selection Gateway & Authentication
-- **Role Cards**: Choose your portal upon arrival:
-  - 👤 **Customer**: Search verified services, reserve open time slots, join standby queues, and write reviews.
-  - 🏢 **Provider / Business**: Manage appointment calendar, specialist staff, live waitlists, and client notifications.
-  - 🛡️ **Platform Admin**: Verify new business registrations, review customer dispute reports, and monitor platform metrics.
-- **Gmail / Email & Password Login**: Clean Sign In and Create Account forms with validation.
-- **⚡ 1-Click Demo Profiles**: Quick buttons to test Customer (`alex@demo.com`), Provider (`aurora@salon.com`), or Admin (`admin@bookngo.com`) with zero typing needed.
+### 1. 🚪 Login & Role Selection First
+- **Login First**: First visit always launches directly to the clean Login Gateway with zero pre-made dummy businesses.
+- **Role Selector**: Switch between 👤 **Customer**, 🏢 **Business / Provider**, and 🛡️ **Admin**.
+- **Sign In & Registration Tabs**: Clean forms with no pre-filled fake text; allows sign in with any Gmail / Email & password.
+- **Dynamic Business Registration**: Providers register their own business name and category to start receiving bookings.
+- **Luxury Rose Pink Theme**: Modern Parisian blush pink color palette (`#F43F7A`, `#D8205E`, soft pearl rose surfaces `#FFF5F7`, and obsidian velvet dark mode).
 
 ---
 

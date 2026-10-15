@@ -64,6 +64,21 @@
 
     renderTimelineView() {
       const provider = window.store.getCurrentProvider();
+      if (!provider) {
+        this.container.innerHTML = `
+          <div style="padding: 48px 24px; text-align: center; max-width: 480px; margin: 40px auto; background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm);">
+            <div style="font-size: 38px; margin-bottom: 8px;">🌸</div>
+            <h3 style="font-size: 18px; font-weight: 800;">No Business Registered Yet</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin: 8px 0 20px;">
+              To launch your appointment calendar and start receiving bookings, set up your business details now.
+            </p>
+            <button class="btn-primary" style="margin: 0 auto; padding: 12px 24px;" onclick="window.app.openModal('providerModal')">
+              ＋ Set Up My Business Profile
+            </button>
+          </div>
+        `;
+        return;
+      }
       const selectedDate = window.store.getSelectedDate();
       const bookings = window.store.getBookingsForDateAndProvider(selectedDate, provider.id);
       const workers = provider.workers || [];

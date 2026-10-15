@@ -191,20 +191,19 @@
     // ========================================================
     selectAuthRole(role) {
       this.currentAuthRole = role;
-      document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
       document.querySelectorAll('.simple-role-btn').forEach(b => b.classList.remove('active'));
 
+      const tabsRow = document.getElementById('authTabsRow');
       if (role === 'customer') {
-        document.getElementById('roleCardCustomer')?.classList.add('selected');
         document.getElementById('btnRoleCustomer')?.classList.add('active');
-        document.getElementById('authEmailInput').value = 'alex@demo.com';
+        if (tabsRow) tabsRow.style.display = 'flex';
       } else if (role === 'provider') {
-        document.getElementById('roleCardProvider')?.classList.add('selected');
         document.getElementById('btnRoleProvider')?.classList.add('active');
-        document.getElementById('authEmailInput').value = 'aurora@salon.com';
+        if (tabsRow) tabsRow.style.display = 'flex';
       } else if (role === 'admin') {
-        document.getElementById('roleCardAdmin')?.classList.add('selected');
-        document.getElementById('authEmailInput').value = 'admin@bookngo.com';
+        document.getElementById('btnRoleAdmin')?.classList.add('active');
+        if (tabsRow) tabsRow.style.display = 'none';
+        this.currentAuthMode = 'signin';
       }
 
       this.updateAuthFormFields();
@@ -212,65 +211,103 @@
 
     switchAuthMode(mode) {
       this.currentAuthMode = mode;
-      document.getElementById('authTabSignIn')?.classList.toggle('active', mode === 'signin');
-      document.getElementById('authTabSignUp')?.classList.toggle('active', mode === 'signup');
-
-      const submitBtn = document.getElementById('authSubmitBtn');
-      if (submitBtn) {
-        submitBtn.textContent = mode === 'signin' ? `Sign In as ${this.currentAuthRole.toUpperCase()}` : `Create ${this.currentAuthRole.toUpperCase()} Account`;
-      }
+      document.getElementById('authModeSignIn')?.classList.toggle('active', mode === 'signin');
+      document.getElementById('authModeSignUp')?.classList.toggle('active', mode === 'signup');
 
       this.updateAuthFormFields();
     }
 
     updateAuthFormFields() {
       const isSignup = this.currentAuthMode === 'signup';
-      const isProvider = this.currentAuthRole === 'provider';
+      const role = this.currentAuthRole;
 
       const nameField = document.getElementById('authNameField');
       const bizField = document.getElementById('authBizField');
-      const catField = document.getElementById('authCatField');
+      const catField = document.getElementById('authBizCatField');
+      const emailLabel = document.getElementById('authEmailLabel');
+      const emailInput = document.getElementById('authEmailInput');
+      const nameLabel = document.getElementById('authNameLabel');
+      const submitBtn = document.getElementById('authSubmitBtn');
 
       if (nameField) nameField.style.display = isSignup ? 'flex' : 'none';
-      if (bizField) bizField.style.display = (isSignup && isProvider) ? 'flex' : 'none';
-      if (catField) catField.style.display = (isSignup && isProvider) ? 'flex' : 'none';
+      if (bizField) bizField.style.display = (isSignup && role === 'provider') ? 'flex' : 'none';
+      if (catField) catField.style.display = (isSignup && role === 'provider') ? 'flex' : 'none';
+
+      if (role === 'customer') {
+        if (emailLabel) emailLabel.textContent = 'Customer Email (Gmail) *';
+        if (emailInput) emailInput.placeholder = 'e.g. yourname@gmail.com';
+        if (nameLabel) nameLabel.textContent = 'Your Full Name *';
+        if (submitBtn) {
+          submitBtn.textContent = isSignup ? 'Create Customer Account →' : 'Sign In as Customer →';
+        }
+      } else if (role === 'provider') {
+        if (emailLabel) emailLabel.textContent = isSignup ? 'Business Email Address *' : 'Business / Provider Email *';
+        if (emailInput) emailInput.placeholder = 'e.g. salon@gmail.com';
+        if (nameLabel) nameLabel.textContent = 'Owner / Manager Name *';
+        if (submitBtn) {
+          submitBtn.textContent = isSignup ? 'Register My Business →' : 'Sign In to Business Portal →';
+        }
+      } else if (role === 'admin') {
+        if (emailLabel) emailLabel.textContent = 'Administrator Email *';
+        if (emailInput) emailInput.placeholder = 'admin@bookngo.com';
+        if (submitBtn) {
+          submitBtn.textContent = 'Sign In as Platform Admin →';
+        }
+      }
     }
 
     handleAuthSubmit(e) {
       e.preventDefault();
-      const email = document.getElementById('authEmailInput').value;
-      const password = document.getElementById('authPasswordInput').value;
-      const name = document.getElementById('authNameInput')?.value || email.split('@')[0];
+      const emailInput = document.getElementById('authEmailInput');
+      const passwordInput = document.getElementById('authPasswordInput');
+      const email = emailInput ? emailInput.value.trim() : '';
+      const password = passwordInput ? passwordInput.value : '';
+      const nameInput = document.getElementById('authNameInput');
+      const name = nameInput?.value?.trim() || email.split('@')[0];
+
+      if (!email || !password) {
+        this.showToast('Please enter both email and password.', 'error');
+        return;
+      }
+
+      if (this.currentAuthRole === 'admin') {
+        window.store.login('admin', email, password);
+        this.showToast('Logged in to Admin Management Portal', 'success');
+        return;
+      }
 
       if (this.currentAuthMode === 'signup') {
         if (this.currentAuthRole === 'customer') {
           window.store.registerCustomer({ name, email, password });
-          this.showToast(`Welcome ${name}! Your customer account is active.`, 'success');
+          this.showToast(`Welcome ${name}! Your customer account is ready.`, 'success');
         } else if (this.currentAuthRole === 'provider') {
-          const bizName = document.getElementById('authBizNameInput')?.value || name + ' Studio';
-          const category = document.getElementById('authBizCatInput')?.value || 'Salons & Spas';
-          window.store.registerProviderBusiness({ name: bizName, category, email });
-          this.showToast(`Business registered! Welcome to your provider dashboard.`, 'success');
-        } else {
-          window.store.login('admin', email, password);
+          const bizNameInput = document.getElementById('authBizNameInput');
+          const bizCatInput = document.getElementById('authBizCatInput');
+          const bizName = bizNameInput?.value?.trim() || `${name}'s Studio`;
+          const category = bizCatInput?.value || 'Salons & Spas';
+          window.store.registerProviderBusiness({
+            name: bizName,
+            category,
+            ownerName: name,
+            email,
+            password
+          });
+          this.showToast(`Congratulations! "${bizName}" is now registered.`, 'success');
         }
       } else {
-        // Sign in
+        // Sign In
+        if (this.currentAuthRole === 'provider') {
+          const providers = window.store.getProviders();
+          const existing = providers.find(p => (p.email || '').toLowerCase() === email.toLowerCase());
+          if (!existing) {
+            // Switch to registration mode
+            this.switchAuthMode('signup');
+            this.showToast('No business registered under this email yet. Please register your business below.', 'info');
+            return;
+          }
+        }
         window.store.login(this.currentAuthRole, email, password);
-        this.showToast(`Signed in as ${email}`, 'success');
-      }
-    }
-
-    quickDemoLogin(role) {
-      if (role === 'customer') {
-        window.store.login('customer', 'alex@demo.com', 'demo123');
-        this.showToast('Signed in as Customer (Alex Morgan)', 'success');
-      } else if (role === 'provider') {
-        window.store.login('provider', 'aurora@salon.com', 'demo123');
-        this.showToast('Signed in as Provider (Aurora Glow Salon)', 'success');
-      } else if (role === 'admin') {
-        window.store.login('admin', 'admin@bookngo.com', 'demo123');
-        this.showToast('Signed in as Platform Admin', 'success');
+        this.showToast(`Signed in successfully as ${email}`, 'success');
       }
     }
 
@@ -366,13 +403,33 @@
       if (countLabel) countLabel.textContent = `Showing ${filtered.length} verified businesses`;
 
       if (filtered.length === 0) {
-        container.innerHTML = `
-          <div style="grid-column: 1 / -1; padding: 48px; text-align: center; background: var(--bg-surface); border: 1px dashed var(--border-light); border-radius: var(--radius-xl);">
-            <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
-            <h4 style="font-size: 16px; font-weight: 700;">No services found matching "${query}"</h4>
-            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Try searching for "haircut", "facial", "dental", or browse by category.</p>
-          </div>
-        `;
+        if (providers.length === 0) {
+          container.innerHTML = `
+            <div style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: var(--bg-surface); border: 1px dashed var(--border-light); border-radius: var(--radius-xl);">
+              <div style="font-size: 40px; margin-bottom: 8px;">🌸</div>
+              <h4 style="font-size: 18px; font-weight: 800; color: var(--text-main);">No Businesses Registered Yet</h4>
+              <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px; max-width: 420px; margin-left: auto; margin-right: auto;">
+                Businesses are added dynamically by registered providers. Create your own business or load a sample boutique salon to test booking slots!
+              </p>
+              <div style="display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap;">
+                <button class="btn-primary" onclick="window.app.logout(); window.app.selectAuthRole('provider')">
+                  🏢 Register a Business
+                </button>
+                <button class="btn-secondary" onclick="window.store.loadSampleBusiness(); window.app.renderCustomerMarketplace();">
+                  🌸 Load Sample Salon for Testing
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div style="grid-column: 1 / -1; padding: 48px; text-align: center; background: var(--bg-surface); border: 1px dashed var(--border-light); border-radius: var(--radius-xl);">
+              <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
+              <h4 style="font-size: 16px; font-weight: 700;">No services found matching "${query}"</h4>
+              <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Try searching for another service name or clear the filter.</p>
+            </div>
+          `;
+        }
         return;
       }
 

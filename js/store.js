@@ -8,15 +8,17 @@
   'use strict';
 
   const STORAGE_KEYS = {
-    PROVIDERS: 'bng_providers_v1',
-    BOOKINGS: 'bng_bookings_v1',
-    WAITLIST: 'bng_waitlist_v1',
-    CUSTOMERS: 'bng_customers_v1',
-    CURRENT_USER: 'bng_current_user_session',
-    SELECTED_PROVIDER: 'bng_selected_provider_id',
-    SELECTED_DATE: 'bng_selected_date',
-    VIEW: 'bng_calendar_view',
-    THEME: 'bng_theme'
+    PROVIDERS: 'bng_v5_providers',
+    BOOKINGS: 'bng_v5_bookings',
+    WAITLIST: 'bng_v5_waitlist',
+    CUSTOMERS: 'bng_v5_customers',
+    CURRENT_USER: 'bng_v5_current_user_session',
+    SELECTED_PROVIDER: 'bng_v5_selected_provider_id',
+    SELECTED_DATE: 'bng_v5_selected_date',
+    VIEW: 'bng_v5_calendar_view',
+    THEME: 'bng_v5_theme',
+    REVIEWS: 'bng_v5_reviews',
+    REPORTS: 'bng_v5_reports'
   };
 
   class Store {
@@ -26,37 +28,47 @@
     }
 
     initStorage() {
-      // Initialize providers
+      // Purge any legacy dummy/pre-made demo keys from older sessions
+      const legacyKeys = [
+        'bng_providers_v1', 'bng_providers_v2', 'bng_bookings_v1', 'bng_waitlist_v1',
+        'bng_customers_v1', 'bng_current_user_v1', 'bng_current_user_session',
+        'bng_selected_provider_v1', 'bng_selected_provider_id', 'bng_reviews_v1', 'bng_reports_v1'
+      ];
+      legacyKeys.forEach(k => {
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+
+      // Providers: ZERO pre-made businesses. User/Provider creates their own.
       if (!localStorage.getItem(STORAGE_KEYS.PROVIDERS)) {
-        localStorage.setItem(STORAGE_KEYS.PROVIDERS, JSON.stringify(window.INITIAL_PROVIDERS || []));
+        localStorage.setItem(STORAGE_KEYS.PROVIDERS, JSON.stringify([]));
       }
-      // Initialize customers
+      // Customers: Empty clean state
       if (!localStorage.getItem(STORAGE_KEYS.CUSTOMERS)) {
-        localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(window.INITIAL_CUSTOMERS || []));
+        localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify([]));
       }
-      // Initialize bookings
+      // Bookings: Empty clean state
       if (!localStorage.getItem(STORAGE_KEYS.BOOKINGS)) {
-        localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(window.INITIAL_BOOKINGS || []));
+        localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify([]));
       }
-      // Initialize waitlist
+      // Waitlist: Empty clean state
       if (!localStorage.getItem(STORAGE_KEYS.WAITLIST)) {
-        localStorage.setItem(STORAGE_KEYS.WAITLIST, JSON.stringify(window.INITIAL_WAITLIST || []));
+        localStorage.setItem(STORAGE_KEYS.WAITLIST, JSON.stringify([]));
       }
-      // Initialize current logged-in user / provider session: default to null so Role Selection shows first!
+      // Session: ALWAYS starts logged out so Login Page shows FIRST!
       if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify({ isLoggedIn: false }));
       }
-      // Initialize reviews
-      if (!localStorage.getItem('bng_reviews_v1')) {
-        localStorage.setItem('bng_reviews_v1', JSON.stringify(window.INITIAL_REVIEWS || []));
+      // Reviews
+      if (!localStorage.getItem(STORAGE_KEYS.REVIEWS)) {
+        localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify([]));
       }
-      // Initialize reports
-      if (!localStorage.getItem('bng_reports_v1')) {
-        localStorage.setItem('bng_reports_v1', JSON.stringify(window.INITIAL_REPORTS || []));
+      // Reports
+      if (!localStorage.getItem(STORAGE_KEYS.REPORTS)) {
+        localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify([]));
       }
       // Selected Provider
       if (!localStorage.getItem(STORAGE_KEYS.SELECTED_PROVIDER)) {
-        localStorage.setItem(STORAGE_KEYS.SELECTED_PROVIDER, 'prov-1');
+        localStorage.setItem(STORAGE_KEYS.SELECTED_PROVIDER, '');
       }
       // Selected Date (defaults to today)
       if (!localStorage.getItem(STORAGE_KEYS.SELECTED_DATE)) {
@@ -270,20 +282,57 @@
     // Providers
     getProviders() {
       try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEYS.PROVIDERS)) || window.INITIAL_PROVIDERS;
+        const raw = localStorage.getItem(STORAGE_KEYS.PROVIDERS);
+        return raw ? JSON.parse(raw) : [];
       } catch (e) {
-        return window.INITIAL_PROVIDERS || [];
+        return [];
       }
     }
 
     getCurrentProviderId() {
-      return localStorage.getItem(STORAGE_KEYS.SELECTED_PROVIDER) || 'prov-1';
+      return localStorage.getItem(STORAGE_KEYS.SELECTED_PROVIDER) || '';
     }
 
     getCurrentProvider() {
       const providers = this.getProviders();
       const curId = this.getCurrentProviderId();
-      return providers.find(p => p.id === curId) || providers[0];
+      return (curId ? providers.find(p => p.id === curId) : null) || providers[0] || null;
+    }
+
+    loadSampleBusiness() {
+      const sample = {
+        id: 'prov-sample',
+        name: 'Blush & Bloom Beauty Studio',
+        category: 'Salons & Spas',
+        tagline: 'Hair styling, balayage, and aesthetic wellness treatments',
+        description: 'Boutique beauty studio offering luxury hair and skin care with master stylists.',
+        location: 'Downtown Center',
+        address: '104 Rosewood Blvd, Suite 200, Downtown',
+        phone: '+1 (555) 234-8901',
+        email: 'blush@salon.com',
+        image: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80',
+        rating: 4.9,
+        reviewCount: 12,
+        status: 'active',
+        workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        openTime: '09:00',
+        closeTime: '18:00',
+        breaks: [{ start: '13:00', end: '13:30', label: 'Lunch Break' }],
+        services: [
+          { id: 'srv-s1', name: 'Signature Haircut & Blowout', category: 'Hair', price: 45, duration: 45, description: 'Wash, tailored cut, and volume blowout styling.', enabled: true },
+          { id: 'srv-s2', name: 'Hydra-Glow Facial Therapy', category: 'Skin', price: 75, duration: 60, description: 'Deep cleanse, hydration serum, and LED therapy.', enabled: true }
+        ],
+        workers: [
+          { id: 'wrk-s1', name: 'Elena Rostova', title: 'Master Stylist', services: ['srv-s1', 'srv-s2'], workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], isUnavailable: false }
+        ]
+      };
+      const list = this.getProviders();
+      if (!list.some(p => p.id === sample.id)) {
+        list.push(sample);
+        localStorage.setItem(STORAGE_KEYS.PROVIDERS, JSON.stringify(list));
+        this.setCurrentProvider(sample.id);
+      }
+      return sample;
     }
 
     setCurrentProvider(providerId) {
@@ -583,7 +632,7 @@
     // Reviews & Feedback System
     getReviews(providerId) {
       try {
-        const revs = JSON.parse(localStorage.getItem('bng_reviews_v1')) || window.INITIAL_REVIEWS || [];
+        const revs = JSON.parse(localStorage.getItem(STORAGE_KEYS.REVIEWS)) || window.INITIAL_REVIEWS || [];
         return providerId ? revs.filter(r => r.providerId === providerId) : revs;
       } catch (e) {
         return window.INITIAL_REVIEWS || [];
@@ -603,7 +652,7 @@
         date: new Date().toISOString().split('T')[0]
       };
       reviews.unshift(newReview);
-      localStorage.setItem('bng_reviews_v1', JSON.stringify(reviews));
+      localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(reviews));
 
       // Recalculate provider average rating
       const providers = this.getProviders();
@@ -624,7 +673,7 @@
     // Admin Oversight & Reports
     getReports() {
       try {
-        return JSON.parse(localStorage.getItem('bng_reports_v1')) || window.INITIAL_REPORTS || [];
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.REPORTS)) || window.INITIAL_REPORTS || [];
       } catch (e) {
         return window.INITIAL_REPORTS || [];
       }

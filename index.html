@@ -25,53 +25,80 @@
           </div>
         </div>
 
-        <!-- Role Toggle Pills -->
+        <!-- Role Selector (Customer / Business / Admin) -->
         <div class="simple-role-toggle">
-          <button class="simple-role-btn active" id="btnRoleCustomer" onclick="window.app.selectAuthRole('customer')">
+          <button type="button" class="simple-role-btn active" id="btnRoleCustomer" onclick="window.app.selectAuthRole('customer')">
             <span>👤</span> <span>Customer</span>
           </button>
-          <button class="simple-role-btn" id="btnRoleProvider" onclick="window.app.selectAuthRole('provider')">
-            <span>🏢</span> <span>Business / Provider</span>
+          <button type="button" class="simple-role-btn" id="btnRoleProvider" onclick="window.app.selectAuthRole('provider')">
+            <span>🏢</span> <span>Business</span>
+          </button>
+          <button type="button" class="simple-role-btn" id="btnRoleAdmin" onclick="window.app.selectAuthRole('admin')">
+            <span>🛡️</span> <span>Admin</span>
           </button>
         </div>
 
-        <!-- Simple Auth Form -->
+        <!-- Auth Mode Tabs (Sign In / Register) -->
+        <div class="auth-tabs-row" id="authTabsRow">
+          <button type="button" class="auth-mode-tab active" id="authModeSignIn" onclick="window.app.switchAuthMode('signin')">
+            Sign In
+          </button>
+          <button type="button" class="auth-mode-tab" id="authModeSignUp" onclick="window.app.switchAuthMode('signup')">
+            Create Account
+          </button>
+        </div>
+
+        <!-- Auth Form (No dummy text, ready for user inputs) -->
         <form class="simple-form" onsubmit="window.app.handleAuthSubmit(event)">
-          <div class="form-group" id="authNameField" style="display: none;">
-            <label class="form-label">Full Name</label>
-            <input type="text" id="authNameInput" class="form-input" placeholder="e.g. Alex Morgan">
-          </div>
-
+          <!-- Provider Business Name -->
           <div class="form-group" id="authBizField" style="display: none;">
-            <label class="form-label">Business / Shop Name</label>
-            <input type="text" id="authBizNameInput" class="form-input" placeholder="e.g. Glow Salon & Spa">
+            <label class="form-label">Business / Shop Name *</label>
+            <input type="text" id="authBizNameInput" class="form-input" placeholder="e.g. Blossom Hair & Nail Bar">
           </div>
 
+          <!-- Provider Business Category -->
+          <div class="form-group" id="authBizCatField" style="display: none;">
+            <label class="form-label">Business Category *</label>
+            <select id="authBizCatInput" class="form-select">
+              <option value="Salons & Spas">💇 Salons & Spas</option>
+              <option value="Beauty & Wellness">🌸 Beauty & Wellness</option>
+              <option value="Healthcare & Clinics">🩺 Healthcare & Clinics</option>
+              <option value="Fitness & Sports">🏋️ Fitness & Sports</option>
+              <option value="Education & Tutoring">📚 Education & Tutoring</option>
+              <option value="Home Services & Repairs">🔧 Home Services & Repairs</option>
+              <option value="Professional Consultations">💼 Professional Consultations</option>
+              <option value="Automotive Services">🚗 Automotive Services</option>
+              <option value="Other Services">⚡ Other Services</option>
+            </select>
+          </div>
+
+          <!-- Full Name (for Sign Up) -->
+          <div class="form-group" id="authNameField" style="display: none;">
+            <label class="form-label" id="authNameLabel">Full Name *</label>
+            <input type="text" id="authNameInput" class="form-input" placeholder="e.g. Jessica Miller">
+          </div>
+
+          <!-- Email Address (Gmail / Email) -->
           <div class="form-group">
-            <label class="form-label">Email Address</label>
-            <input type="email" id="authEmailInput" class="form-input" placeholder="your.name@gmail.com" required value="alex@demo.com">
+            <label class="form-label" id="authEmailLabel">Email Address (Gmail / Work) *</label>
+            <input type="email" id="authEmailInput" class="form-input" placeholder="name@gmail.com" required autocomplete="email">
           </div>
 
+          <!-- Password -->
           <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" id="authPasswordInput" class="form-input" placeholder="••••••••" required value="password123">
+            <label class="form-label">Password *</label>
+            <input type="password" id="authPasswordInput" class="form-input" placeholder="Enter password" required autocomplete="current-password">
           </div>
 
-          <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px;" id="authSubmitBtn">
-            Continue to BookNGo →
+          <!-- Submit Button -->
+          <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 13px; font-size: 14px; font-weight: 700; margin-top: 4px;" id="authSubmitBtn">
+            Sign In as Customer →
           </button>
         </form>
 
-        <!-- Fast 1-Click Demo Buttons -->
-        <div class="simple-demo-section">
-          <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Or explore instantly:</span>
-          <div style="display: flex; gap: 8px; justify-content: center; margin-top: 8px;">
-            <button class="demo-chip-btn" onclick="window.app.quickDemoLogin('customer')">👤 Test as Customer</button>
-            <button class="demo-chip-btn" onclick="window.app.quickDemoLogin('provider')">🏢 Test as Provider</button>
-          </div>
-          <div style="text-align: center; margin-top: 14px;">
-            <a href="#" style="font-size: 11px; color: var(--text-muted); text-decoration: underline;" onclick="event.preventDefault(); window.app.quickDemoLogin('admin')">Platform Admin Login</a>
-          </div>
+        <!-- Clean Helper Footer -->
+        <div style="text-align: center; font-size: 11px; color: var(--text-muted); line-height: 1.5; padding-top: 10px; border-top: 1px solid var(--border-light);">
+          ✨ Clean platform with zero pre-made dummy businesses. Log in with your email or register your own business to start accepting appointments.
         </div>
       </div>
     </div>
