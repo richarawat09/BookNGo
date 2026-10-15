@@ -2223,8 +2223,8 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: radial-gradient(circle at 12% 18%, #FFD1E3 0%, transparent 45%),
-              radial-gradient(circle at 88% 82%, #FFBAD4 0%, transparent 45%),
+  background: radial-gradient(circle at 10% 20%, #FFF0F6 0%, transparent 50%),
+              radial-gradient(circle at 90% 80%, #FFE8F2 0%, transparent 50%),
               var(--bg-page);
   min-height: 100vh;
 }
@@ -2233,9 +2233,9 @@ input:focus, select:focus, textarea:focus {
   width: 100%;
   max-width: 440px;
   background: var(--bg-surface);
-  border: 2px solid var(--border-light);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-xl);
-  box-shadow: 0 20px 45px rgba(255, 31, 125, 0.16), 0 4px 14px rgba(255, 184, 214, 0.35);
+  box-shadow: 0 16px 36px rgba(244, 114, 182, 0.12), 0 2px 8px rgba(252, 216, 232, 0.35);
   padding: 36px 32px;
   display: flex;
   flex-direction: column;
@@ -2350,9 +2350,9 @@ input:focus, select:focus, textarea:focus {
 /* Simple Navbar */
 .simple-navbar {
   height: 64px;
-  background: rgba(255, 240, 245, 0.95);
+  background: rgba(255, 247, 250, 0.95);
   backdrop-filter: blur(10px);
-  border-bottom: 1.5px solid var(--border-light);
+  border-bottom: 1px solid var(--border-light);
   padding: 0 32px;
   display: flex;
   align-items: center;
@@ -2390,10 +2390,10 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   gap: 12px;
   background: var(--bg-surface);
-  border: 2px solid var(--border-light);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 6px 18px;
-  box-shadow: 0 4px 14px rgba(255, 31, 125, 0.08);
+  box-shadow: 0 2px 8px rgba(244, 114, 182, 0.06);
 }
 .simple-search-wrap:focus-within {
   border-color: var(--border-focus);
