@@ -1657,23 +1657,34 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ========================================================
-   9. ROLE SELECTION LANDING / AUTH GATEWAY
+   9. MULTI-PORTAL ROUTING & ROLE SELECTION SCREEN
    ======================================================== */
-.auth-gateway-overlay {
-  position: fixed;
-  inset: 0;
-  background: var(--bg-page);
-  z-index: 1000;
+.portal-view {
+  display: none;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.portal-view.active {
+  display: flex;
+}
+
+/* Auth / Role Selection Landing Page */
+.auth-page-wrapper {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 30px 20px;
+  background: radial-gradient(circle at 50% 20%, rgba(99, 102, 241, 0.08), transparent 70%), var(--bg-page);
   overflow-y: auto;
+  min-height: 100vh;
 }
 
-.auth-container {
+.auth-card-container {
   width: 100%;
-  max-width: 680px;
+  max-width: 600px;
   background: var(--bg-surface);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-xl);
@@ -1686,72 +1697,63 @@ input:focus, select:focus, textarea:focus {
 
 .auth-header {
   text-align: center;
-}
-
-.auth-brand-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-lg);
-  background: var(--primary-gradient);
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-weight: 800;
-  font-size: 24px;
-  box-shadow: 0 4px 14px var(--primary-glow);
-  margin-bottom: 12px;
+  gap: 8px;
 }
 
-.auth-title {
+.auth-logo-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.auth-header-title {
   font-size: 24px;
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--text-main);
 }
 
-.auth-subtitle {
+.auth-header-desc {
   font-size: 13px;
   color: var(--text-muted);
-  margin-top: 4px;
+  max-width: 420px;
 }
 
-/* 3 Role Selection Cards */
+/* Role Selector 3-Card Grid */
 .role-cards-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-
-@media (max-width: 640px) {
-  .role-cards-grid {
-    grid-template-columns: 1fr;
-  }
+  gap: 12px;
 }
 
 .role-card {
-  background: var(--bg-surface-alt);
-  border: 2px solid var(--border-light);
+  padding: 16px 14px;
   border-radius: var(--radius-lg);
-  padding: 18px 14px;
-  cursor: pointer;
+  background: var(--bg-surface-alt);
+  border: 2px solid transparent;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 8px;
+  cursor: pointer;
   transition: all var(--transition-fast);
 }
 
 .role-card:hover {
+  background: var(--bg-surface-hover);
+  border-color: var(--border-light);
   transform: translateY(-2px);
-  border-color: var(--border-focus);
 }
 
 .role-card.selected {
-  border-color: var(--primary-500);
   background: var(--primary-50);
-  box-shadow: 0 0 0 1px var(--primary-500), 0 4px 12px var(--primary-glow);
+  border-color: var(--primary-500);
+  box-shadow: 0 4px 14px var(--primary-glow);
 }
 
 [data-theme="dark"] .role-card.selected {
@@ -1761,213 +1763,229 @@ input:focus, select:focus, textarea:focus {
 
 .role-card-icon {
   font-size: 28px;
-  margin-bottom: 2px;
 }
 
 .role-card-title {
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-main);
 }
 
 .role-card-desc {
   font-size: 11px;
   color: var(--text-muted);
-  line-height: 1.35;
+  line-height: 1.3;
 }
 
-/* Auth Input Form */
-.auth-form-card {
+/* Auth Tabs (Sign In vs Create Account) */
+.auth-tabs {
+  display: flex;
   background: var(--bg-surface-alt);
+  padding: 4px;
   border-radius: var(--radius-md);
-  padding: 20px;
+  gap: 4px;
+}
+
+.auth-tab-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.auth-tab-btn.active {
+  background: var(--bg-surface);
+  color: var(--primary-600);
+  box-shadow: var(--shadow-xs);
+}
+
+[data-theme="dark"] .auth-tab-btn.active {
+  color: var(--primary-400);
+}
+
+.auth-form {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 
-.auth-quick-login-row {
+/* Quick Demo Chips */
+.quick-demo-accounts {
+  border-top: 1px solid var(--border-light);
+  padding-top: 18px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
-  flex-wrap: wrap;
-  font-size: 11px;
 }
 
-.quick-demo-pill {
-  padding: 4px 10px;
+.quick-demo-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-subtle);
+  text-align: center;
+}
+
+.quick-demo-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.demo-chip-btn {
+  padding: 6px 12px;
   border-radius: var(--radius-full);
-  background: var(--bg-surface);
-  border: 1px solid var(--border-light);
+  font-size: 11px;
   font-weight: 600;
-  color: var(--primary-600);
-  cursor: pointer;
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
   transition: all var(--transition-fast);
 }
-
-.quick-demo-pill:hover {
-  background: var(--primary-50);
+.demo-chip-btn:hover {
   border-color: var(--primary-400);
+  color: var(--primary-600);
+  transform: translateY(-1px);
 }
 
 /* ========================================================
-   10. CUSTOMER PORTAL & SEARCH & SLOT BOOKING
+   10. CUSTOMER PORTAL INTERFACE
    ======================================================== */
-.customer-portal {
+.customer-layout {
   flex: 1;
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow-y: auto;
+  overflow: hidden;
   background: var(--bg-page);
 }
 
-.customer-top-nav {
-  height: 64px;
+/* Customer Top Navigation */
+.customer-navbar {
+  height: 68px;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-light);
+  padding: 0 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 28px;
-  position: sticky;
-  top: 0;
-  z-index: 40;
+  z-index: 20;
 }
 
 .cust-nav-links {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
 .cust-nav-btn {
-  padding: 8px 14px;
+  padding: 8px 16px;
   border-radius: var(--radius-md);
   font-weight: 600;
   font-size: 13px;
   color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 6px;
 }
-
 .cust-nav-btn:hover {
   color: var(--text-main);
   background: var(--bg-surface-alt);
 }
-
 .cust-nav-btn.active {
-  color: var(--primary-600);
   background: var(--primary-50);
+  color: var(--primary-600);
 }
-
 [data-theme="dark"] .cust-nav-btn.active {
-  color: var(--primary-400);
   background: rgba(99, 102, 241, 0.15);
+  color: var(--primary-400);
 }
 
-/* Customer Hero Search */
-.customer-hero-section {
-  padding: 36px 28px 24px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-light);
+/* Customer Workspace Scroll Body */
+.customer-body-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 16px;
+  gap: 28px;
 }
 
-.cust-hero-title {
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  color: var(--text-main);
+/* Customer Hero Banner */
+.customer-hero {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.cust-hero-subtitle {
-  font-size: 13px;
-  color: var(--text-muted);
-  max-width: 520px;
-}
-
-.cust-search-bar {
-  width: 100%;
-  max-width: 600px;
+.hero-main-search {
   display: flex;
   align-items: center;
+  gap: 12px;
   background: var(--bg-surface-alt);
   border: 1px solid var(--border-light);
-  border-radius: var(--radius-full);
-  padding: 4px 6px 4px 18px;
-  box-shadow: var(--shadow-sm);
-  transition: all var(--transition-fast);
+  border-radius: var(--radius-lg);
+  padding: 6px 16px;
 }
-
-.cust-search-bar:focus-within {
+.hero-main-search:focus-within {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px var(--primary-glow);
 }
 
-.cust-search-input {
+.hero-search-input {
   flex: 1;
   border: none;
   background: transparent;
-  padding: 10px 8px;
-  font-size: 13px;
+  font-size: 15px;
+  padding: 8px 0;
 }
 
-.cust-category-pills {
+/* Category Filter Chips */
+.category-chips-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.category-pill-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 8px;
-}
-
-.cat-pill-btn {
-  padding: 6px 14px;
+  gap: 6px;
+  padding: 7px 14px;
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-muted);
   background: var(--bg-surface-alt);
   border: 1px solid var(--border-light);
-  cursor: pointer;
-  transition: all var(--transition-fast);
+  color: var(--text-muted);
+  white-space: nowrap;
 }
-
-.cat-pill-btn:hover {
+.category-pill-btn:hover {
   border-color: var(--border-focus);
   color: var(--text-main);
 }
-
-.cat-pill-btn.active {
+.category-pill-btn.active {
   background: var(--primary-600);
   color: #fff;
   border-color: var(--primary-600);
 }
 
-/* Service / Provider Catalog Grid */
-.customer-catalog-section {
-  padding: 28px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  max-width: 1280px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.providers-grid {
+/* Provider & Service Marketplace Cards */
+.providers-marketplace-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 20px;
 }
 
-.business-card {
+.provider-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-light);
   border-radius: var(--radius-xl);
@@ -1977,161 +1995,218 @@ input:focus, select:focus, textarea:focus {
   flex-direction: column;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
-
-.business-card:hover {
+.provider-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
   border-color: var(--primary-300);
 }
 
-.business-card-img {
-  width: 100%;
+.provider-card-img-wrap {
   height: 160px;
-  object-fit: cover;
   position: relative;
+  overflow: hidden;
 }
 
-.business-card-content {
-  padding: 18px;
+.provider-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.provider-card-cat-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.provider-card-content {
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   flex: 1;
 }
 
-.business-header-row {
+.provider-card-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
 }
 
-.business-title {
+.provider-card-title {
   font-size: 16px;
   font-weight: 700;
   color: var(--text-main);
+  line-height: 1.2;
 }
 
-.business-rating-badge {
+.provider-rating-pill {
   display: flex;
   align-items: center;
   gap: 4px;
   font-size: 12px;
   font-weight: 700;
-  color: #D97706;
-  background: #FEF3C7;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border: 1px solid var(--warning-border);
   padding: 2px 8px;
   border-radius: var(--radius-full);
 }
 
-[data-theme="dark"] .business-rating-badge {
-  background: rgba(245, 158, 11, 0.2);
+.provider-card-loc {
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.business-services-list {
+.provider-services-summary {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  border-top: 1px solid var(--border-subtle);
-  border-bottom: 1px solid var(--border-subtle);
-  padding: 10px 0;
+  margin-top: 4px;
+  border-top: 1px solid var(--border-light);
+  padding-top: 10px;
 }
 
-.service-item-row {
+.provider-service-item-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-size: 12px;
 }
 
-.service-item-name {
-  font-weight: 600;
-  color: var(--text-main);
+.provider-card-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-light);
+  background: var(--bg-surface-alt);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.service-item-price {
-  font-weight: 700;
-  color: var(--primary-600);
-}
-
-[data-theme="dark"] .service-item-price {
-  color: var(--primary-400);
-}
-
-/* Time Slot Selector Pills in Booking Modal */
-.slot-picker-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+/* Customer Slot Booking Matrix in Modal */
+.slot-time-group {
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  margin-top: 6px;
+  margin-bottom: 12px;
 }
 
-@media (max-width: 480px) {
-  .slot-picker-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+.slot-time-group-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.slot-time-pill {
+.slot-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 8px;
+}
+
+.slot-badge-btn {
   padding: 8px 6px;
   border-radius: var(--radius-sm);
-  background: var(--bg-surface-alt);
   border: 1px solid var(--border-light);
-  font-size: 12px;
+  background: var(--bg-surface);
   font-weight: 600;
-  color: var(--text-main);
+  font-size: 12px;
   text-align: center;
-  cursor: pointer;
+  color: var(--text-main);
   transition: all var(--transition-fast);
 }
-
-.slot-time-pill:hover {
+.slot-badge-btn:hover {
+  border-color: var(--border-focus);
   background: var(--primary-50);
-  border-color: var(--primary-400);
   color: var(--primary-600);
 }
-
-.slot-time-pill.selected {
+.slot-badge-btn.selected {
   background: var(--primary-600);
   color: #fff;
   border-color: var(--primary-600);
-  box-shadow: 0 2px 8px var(--primary-glow);
 }
 
-/* Review Star Selector */
-.star-rating-widget {
+/* Star Rating Picker */
+.star-rating-row {
   display: flex;
-  align-items: center;
   gap: 8px;
   font-size: 28px;
   cursor: pointer;
 }
 
-.star-rating-widget span {
-  transition: transform 0.15s ease;
+.star-rating-item {
+  color: var(--border-light);
+  transition: color var(--transition-fast);
+}
+.star-rating-item.active {
+  color: #F59E0B;
 }
 
-.star-rating-widget span:hover {
-  transform: scale(1.2);
+/* ========================================================
+   11. ADMIN PORTAL INTERFACE
+   ======================================================== */
+.admin-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-page);
 }
 
-/* My Bookings List Card */
-.my-booking-card {
+.admin-header {
+  height: 68px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-lg);
-  padding: 18px;
-  box-shadow: var(--shadow-xs);
+  border-bottom: 1px solid var(--border-light);
+  padding: 0 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
 }
 
-@media (max-width: 768px) {
-  .my-booking-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.admin-body-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.admin-table th, .admin-table td {
+  padding: 14px 18px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 13px;
+}
+
+.admin-table th {
+  background: var(--bg-surface-alt);
+  font-weight: 700;
+  color: var(--text-subtle);
+  font-size: 11px;
+  text-transform: uppercase;
 }
 

@@ -1,10 +1,7 @@
 /**
- * BookNGo — Main Application Coordinator
- * Handles:
- * 1. Role Selection Gateway (Customer, Provider, Admin) with Gmail/Password Auth
- * 2. Customer Portal: Service Searching, Live "Book a Slot" Matrix, My Bookings, & Reviewing System
- * 3. Provider Portal: Schedulo Staff Timeline Calendar, Live Waitlist Drawer & Smart Match
- * 4. Admin Portal: Platform Oversight & Provider Management
+ * BookNGo — Main Application Coordinator (Multi-Portal Edition)
+ * Manages Role Selection, Authentication, Customer Service Search & Slot Booking,
+ * Review & Feedback System, Provider Schedulo Calendar, and Admin Oversight.
  */
 
 (function () {
@@ -12,69 +9,51 @@
 
   class App {
     constructor() {
-      this.selectedRole = 'customer';
-      this.authMode = 'login';
-      this.currentCustomerCategory = 'all';
-      this.customerSearchQuery = '';
+      this.currentAuthRole = 'customer';
+      this.currentAuthMode = 'signin';
+      this.selectedCustomerCategory = 'all';
+      this.selectedBookingSlotTime = null;
+      this.currentBookingProviderId = null;
       this.init();
     }
 
     init() {
       document.addEventListener('DOMContentLoaded', () => {
         this.applyTheme(window.store.getTheme());
+        this.bindEvents();
         this.checkSessionAndRoute();
-        this.bindGlobalEvents();
       });
     }
 
-    applyTheme(theme) {
-      document.documentElement.setAttribute('data-theme', theme);
-      const themeBtn = document.getElementById('themeToggleBtn');
-      if (themeBtn) {
-        themeBtn.innerHTML = theme === 'dark' ? '☀️' : '🌙';
-      }
-    }
-
-    bindGlobalEvents() {
-      // Theme toggle
-      const themeBtn = document.getElementById('themeToggleBtn');
-      if (themeBtn) {
-        themeBtn.addEventListener('click', () => {
-          const next = window.store.getTheme() === 'dark' ? 'light' : 'dark';
-          window.store.setTheme(next);
-          this.applyTheme(next);
-        });
-      }
-
-      // Keyboard ESC closes modals
+    bindEvents() {
+      // Global ESC key to close any active modal
       window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') this.closeAllModals();
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
           e.preventDefault();
           this.openCommandPalette();
         }
+        if (e.key === 'Escape') {
+          this.closeAllModals();
+        }
       });
 
-      // Provider Date Controls
+      // Provider Date Navigation Buttons
       const btnToday = document.getElementById('btnToday');
       if (btnToday) {
         btnToday.addEventListener('click', () => {
-          window.store.setSelectedDate(window.getDateOffset(0));
-          this.updateProviderDateDisplay();
+          const today = window.getDateOffset(0);
+          window.store.setSelectedDate(today);
+          this.updateDateDisplay();
         });
       }
 
       const btnPrevDate = document.getElementById('btnPrevDate');
-      if (btnPrevDate) {
-        btnPrevDate.addEventListener('click', () => this.shiftProviderDate(-1));
-      }
+      if (btnPrevDate) btnPrevDate.addEventListener('click', () => this.shiftDate(-1));
 
       const btnNextDate = document.getElementById('btnNextDate');
-      if (btnNextDate) {
-        btnNextDate.addEventListener('click', () => this.shiftProviderDate(1));
-      }
+      if (btnNextDate) btnNextDate.addEventListener('click', () => this.shiftDate(1));
 
-      // Provider View Switcher
+      // Provider View Switcher Buttons
       document.querySelectorAll('.view-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const view = btn.getAttribute('data-view');
@@ -102,6 +81,24 @@
         });
       }
 
+      // Provider Waitlist Filter Tabs
+      document.querySelectorAll('.waitlist-tab-btn').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.waitlist-tab-btn').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const filter = tab.getAttribute('data-filter');
+          if (window.waitlistController) window.waitlistController.setFilter(filter);
+        });
+      });
+
+      // Provider Waitlist Search
+      const wlSearchInput = document.getElementById('waitlistSearchInput');
+      if (wlSearchInput) {
+        wlSearchInput.addEventListener('input', (e) => {
+          if (window.waitlistController) window.waitlistController.setSearchQuery(e.target.value);
+        });
+      }
+
       // Sidebar Collapse
       const sidebarCollapseBtn = document.getElementById('sidebarCollapseBtn');
       const sidebar = document.getElementById('sidebar');
@@ -109,428 +106,467 @@
         sidebarCollapseBtn.addEventListener('click', () => sidebar.classList.toggle('collapsed'));
       }
 
-      // Waitlist Search & Tabs
-      const wlSearch = document.getElementById('waitlistSearchInput');
-      if (wlSearch && window.waitlistController) {
-        wlSearch.addEventListener('input', (e) => window.waitlistController.setSearchQuery(e.target.value));
-      }
-
-      document.querySelectorAll('.waitlist-tab-btn').forEach(tab => {
-        tab.addEventListener('click', () => {
-          document.querySelectorAll('.waitlist-tab-btn').forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-          if (window.waitlistController) {
-            window.waitlistController.setFilter(tab.getAttribute('data-filter'));
-          }
-        });
-      });
-
       // Reactive store listeners
       window.store.subscribe('session_changed', () => this.checkSessionAndRoute());
-      window.store.subscribe('bookings_updated', () => {
-        this.updateProviderKpis();
-        this.updateCustomerBadges();
+      window.store.subscribe('provider_changed', () => {
+        this.renderCustomerMarketplace();
+        this.updateProviderKpiBar();
       });
-      window.store.subscribe('waitlist_updated', () => this.updateProviderKpis());
-      window.store.subscribe('reviews_updated', () => {
-        this.renderCustomerCatalog();
-        this.renderCustomerReviews();
+      window.store.subscribe('bookings_updated', () => {
+        this.updateProviderKpiBar();
+        this.renderCustomerBookings();
+      });
+      window.store.subscribe('waitlist_updated', () => {
+        this.updateProviderKpiBar();
+        this.renderCustomerBookings();
+      });
+      window.store.subscribe('review_added', () => {
+        this.renderCustomerMarketplace();
+        this.renderCustomerBookings();
+      });
+      window.store.subscribe('date_changed', () => {
+        this.updateDateDisplay();
+        this.updateProviderKpiBar();
       });
     }
 
     // ========================================================
-    // 1. AUTH GATEWAY & ROLE ROUTING
+    // 1. ROUTING & PORTAL SWITCHING
     // ========================================================
     checkSessionAndRoute() {
       const session = window.store.getCurrentSession();
-      const authOverlay = document.getElementById('authGatewayOverlay');
+      const authPortal = document.getElementById('authPortal');
       const customerPortal = document.getElementById('customerPortal');
       const providerPortal = document.getElementById('providerPortal');
       const adminPortal = document.getElementById('adminPortal');
 
+      // Hide all portals first
+      [authPortal, customerPortal, providerPortal, adminPortal].forEach(el => {
+        if (el) el.classList.remove('active');
+      });
+
       if (!session || !session.isLoggedIn) {
-        // Show role selection auth gateway
-        if (authOverlay) authOverlay.style.display = 'flex';
-        if (customerPortal) customerPortal.style.display = 'none';
-        if (providerPortal) providerPortal.style.display = 'none';
-        if (adminPortal) adminPortal.style.display = 'none';
+        if (authPortal) authPortal.classList.add('active');
         return;
       }
 
-      // Hide auth gateway
-      if (authOverlay) authOverlay.style.display = 'none';
-
       if (session.role === 'customer') {
-        if (customerPortal) customerPortal.style.display = 'flex';
-        if (providerPortal) providerPortal.style.display = 'none';
-        if (adminPortal) adminPortal.style.display = 'none';
+        if (customerPortal) customerPortal.classList.add('active');
         this.setupCustomerPortal(session);
-      } else if (session.role === 'provider') {
-        if (customerPortal) customerPortal.style.display = 'none';
-        if (providerPortal) providerPortal.style.display = 'flex';
-        if (adminPortal) adminPortal.style.display = 'none';
+        return;
+      }
+
+      if (session.role === 'provider') {
+        if (providerPortal) providerPortal.classList.add('active');
         this.setupProviderPortal(session);
-      } else if (session.role === 'admin') {
-        if (customerPortal) customerPortal.style.display = 'none';
-        if (providerPortal) providerPortal.style.display = 'none';
-        if (adminPortal) adminPortal.style.display = 'flex';
+        return;
+      }
+
+      if (session.role === 'admin') {
+        if (adminPortal) adminPortal.classList.add('active');
         this.setupAdminPortal(session);
+        return;
       }
     }
 
-    selectAuthRole(role) {
-      this.selectedRole = role;
-      document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
-      const activeCard = document.getElementById('roleCard' + role.charAt(0).toUpperCase() + role.slice(1));
-      if (activeCard) activeCard.classList.add('selected');
+    logout() {
+      window.store.logout();
+      this.showToast('Signed out of BookNGo. Please select a portal to continue.', 'info');
+    }
 
-      const titleEl = document.getElementById('authFormTitle');
-      const submitBtn = document.getElementById('authSubmitBtn');
-      const emailInput = document.getElementById('authEmailInput');
+    applyTheme(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+
+    toggleTheme() {
+      const current = window.store.getTheme();
+      const next = current === 'dark' ? 'light' : 'dark';
+      window.store.setTheme(next);
+      this.applyTheme(next);
+      this.showToast(`Switched to ${next} mode`, 'info');
+    }
+
+    // ========================================================
+    // 2. AUTHENTICATION & ROLE SELECTION LOGIC
+    // ========================================================
+    selectAuthRole(role) {
+      this.currentAuthRole = role;
+      document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
 
       if (role === 'customer') {
-        if (titleEl) titleEl.textContent = this.authMode === 'login' ? 'Log in as Customer' : 'Create Customer Account';
-        if (submitBtn) submitBtn.textContent = 'Continue as Customer';
-        if (emailInput && !emailInput.value) emailInput.value = 'alex@demo.com';
+        document.getElementById('roleCardCustomer')?.classList.add('selected');
+        document.getElementById('authEmailInput').value = 'alex@demo.com';
       } else if (role === 'provider') {
-        if (titleEl) titleEl.textContent = this.authMode === 'login' ? 'Log in to Provider Business' : 'Register New Business';
-        if (submitBtn) submitBtn.textContent = 'Enter Provider Dashboard';
-        if (emailInput && !emailInput.value) emailInput.value = 'aurora@salon.com';
+        document.getElementById('roleCardProvider')?.classList.add('selected');
+        document.getElementById('authEmailInput').value = 'aurora@salon.com';
       } else if (role === 'admin') {
-        if (titleEl) titleEl.textContent = 'Log in as Platform Administrator';
-        if (submitBtn) submitBtn.textContent = 'Access Admin Dashboard';
-        if (emailInput) emailInput.value = 'admin@bookngo.com';
+        document.getElementById('roleCardAdmin')?.classList.add('selected');
+        document.getElementById('authEmailInput').value = 'admin@bookngo.com';
       }
+
+      this.updateAuthFormFields();
     }
 
-    toggleAuthMode(mode) {
-      this.authMode = mode;
-      const tabLogin = document.getElementById('authTabLogin');
-      const tabRegister = document.getElementById('authTabRegister');
-      const nameGroup = document.getElementById('authNameGroup');
+    switchAuthMode(mode) {
+      this.currentAuthMode = mode;
+      document.getElementById('authTabSignIn')?.classList.toggle('active', mode === 'signin');
+      document.getElementById('authTabSignUp')?.classList.toggle('active', mode === 'signup');
 
-      if (mode === 'register') {
-        if (tabRegister) { tabRegister.style.background = 'var(--bg-surface)'; tabRegister.style.fontWeight = '700'; }
-        if (tabLogin) { tabLogin.style.background = 'transparent'; tabLogin.style.fontWeight = '500'; }
-        if (nameGroup) nameGroup.style.display = 'flex';
-      } else {
-        if (tabLogin) { tabLogin.style.background = 'var(--bg-surface)'; tabLogin.style.fontWeight = '700'; }
-        if (tabRegister) { tabRegister.style.background = 'transparent'; tabRegister.style.fontWeight = '500'; }
-        if (nameGroup) nameGroup.style.display = 'none';
+      const submitBtn = document.getElementById('authSubmitBtn');
+      if (submitBtn) {
+        submitBtn.textContent = mode === 'signin' ? `Sign In as ${this.currentAuthRole.toUpperCase()}` : `Create ${this.currentAuthRole.toUpperCase()} Account`;
       }
-      this.selectAuthRole(this.selectedRole);
+
+      this.updateAuthFormFields();
+    }
+
+    updateAuthFormFields() {
+      const isSignup = this.currentAuthMode === 'signup';
+      const isProvider = this.currentAuthRole === 'provider';
+
+      const nameField = document.getElementById('authNameField');
+      const bizField = document.getElementById('authBizField');
+      const catField = document.getElementById('authCatField');
+
+      if (nameField) nameField.style.display = isSignup ? 'flex' : 'none';
+      if (bizField) bizField.style.display = (isSignup && isProvider) ? 'flex' : 'none';
+      if (catField) catField.style.display = (isSignup && isProvider) ? 'flex' : 'none';
     }
 
     handleAuthSubmit(e) {
       e.preventDefault();
       const email = document.getElementById('authEmailInput').value;
       const password = document.getElementById('authPasswordInput').value;
-      const name = document.getElementById('authNameInput') ? document.getElementById('authNameInput').value : '';
+      const name = document.getElementById('authNameInput')?.value || email.split('@')[0];
 
-      window.store.loginUser({
-        email,
-        password,
-        role: this.selectedRole,
-        name
-      });
-
-      this.showToast(`Logged in successfully as ${this.selectedRole.toUpperCase()}!`, 'success');
-    }
-
-    quickLoginDemo(role) {
-      this.selectAuthRole(role);
-      let demoEmail = 'alex@demo.com';
-      let demoName = 'Alex Morgan';
-
-      if (role === 'provider') {
-        demoEmail = 'aurora@salon.com';
-        demoName = 'Aurora Glow Salon';
-      } else if (role === 'admin') {
-        demoEmail = 'admin@bookngo.com';
-        demoName = 'Administrator';
+      if (this.currentAuthMode === 'signup') {
+        if (this.currentAuthRole === 'customer') {
+          window.store.registerCustomer({ name, email, password });
+          this.showToast(`Welcome ${name}! Your customer account is active.`, 'success');
+        } else if (this.currentAuthRole === 'provider') {
+          const bizName = document.getElementById('authBizNameInput')?.value || name + ' Studio';
+          const category = document.getElementById('authBizCatInput')?.value || 'Salons & Spas';
+          window.store.registerProviderBusiness({ name: bizName, category, email });
+          this.showToast(`Business registered! Welcome to your provider dashboard.`, 'success');
+        } else {
+          window.store.login('admin', email, password);
+        }
+      } else {
+        // Sign in
+        window.store.login(this.currentAuthRole, email, password);
+        this.showToast(`Signed in as ${email}`, 'success');
       }
-
-      window.store.loginUser({
-        email: demoEmail,
-        password: 'password123',
-        role: role,
-        name: demoName
-      });
-
-      this.showToast(`Logged in as demo ${role}!`, 'success');
     }
 
-    logoutUser() {
-      window.store.logout();
-      this.showToast('Logged out. Please select role to sign in.', 'info');
+    quickDemoLogin(role) {
+      if (role === 'customer') {
+        window.store.login('customer', 'alex@demo.com', 'demo123');
+        this.showToast('Signed in as Customer (Alex Morgan)', 'success');
+      } else if (role === 'provider') {
+        window.store.login('provider', 'aurora@salon.com', 'demo123');
+        this.showToast('Signed in as Provider (Aurora Glow Salon)', 'success');
+      } else if (role === 'admin') {
+        window.store.login('admin', 'admin@bookngo.com', 'demo123');
+        this.showToast('Signed in as Platform Admin', 'success');
+      }
     }
 
     // ========================================================
-    // 2. CUSTOMER PORTAL LOGIC (SEARCH, BOOK A SLOT, REVIEWS)
+    // 3. CUSTOMER PORTAL WORKFLOW
     // ========================================================
     setupCustomerPortal(session) {
-      const headerName = document.getElementById('custHeaderName');
-      if (headerName) headerName.textContent = session.name || session.email;
+      const nameEl = document.getElementById('custUserName');
+      if (nameEl) nameEl.textContent = session.name || 'Customer';
+
+      const avatarEl = document.getElementById('custUserAvatar');
+      if (avatarEl && session.avatar) avatarEl.src = session.avatar;
 
       this.renderCustomerCategoryPills();
-      this.renderCustomerCatalog();
-      this.updateCustomerBadges();
-      this.switchCustomerTab('explore');
+      this.renderCustomerMarketplace();
+      this.renderCustomerBookings();
     }
 
     switchCustomerTab(tab) {
-      document.querySelectorAll('.cust-nav-btn').forEach(b => b.classList.remove('active'));
-      const activeBtn = document.getElementById('custTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
-      if (activeBtn) activeBtn.classList.add('active');
+      const tabExplore = document.getElementById('customerTabExplore');
+      const tabBookings = document.getElementById('customerTabBookings');
+      const navExplore = document.getElementById('custNavExplore');
+      const navBookings = document.getElementById('custNavBookings');
 
-      const secExplore = document.getElementById('custSectionExplore');
-      const secBookings = document.getElementById('custSectionBookings');
-      const secReviews = document.getElementById('custSectionReviews');
-
-      if (secExplore) secExplore.style.display = tab === 'explore' ? 'block' : 'none';
-      if (secBookings) secBookings.style.display = tab === 'bookings' ? 'block' : 'none';
-      if (secReviews) secReviews.style.display = tab === 'reviews' ? 'block' : 'none';
-
-      if (tab === 'bookings') this.renderCustomerBookings();
-      if (tab === 'reviews') this.renderCustomerReviews();
+      if (tab === 'explore') {
+        if (tabExplore) tabExplore.style.display = 'block';
+        if (tabBookings) tabBookings.style.display = 'none';
+        navExplore?.classList.add('active');
+        navBookings?.classList.remove('active');
+      } else {
+        if (tabExplore) tabExplore.style.display = 'none';
+        if (tabBookings) tabBookings.style.display = 'block';
+        navExplore?.classList.remove('active');
+        navBookings?.classList.add('active');
+        this.renderCustomerBookings();
+      }
     }
 
     renderCustomerCategoryPills() {
-      const mount = document.getElementById('custCategoryPillsMount');
-      if (!mount) return;
+      const container = document.getElementById('custCategoryPills');
+      if (!container) return;
 
       const categories = [
-        { id: 'all', name: 'All Services' },
-        { id: 'Salons & Spas', name: '💇 Salons & Spas' },
-        { id: 'Beauty & Wellness', name: '✨ Beauty & Wellness' },
-        { id: 'Healthcare & Clinics', name: '🩺 Healthcare & Clinics' },
-        { id: 'Fitness & Sports', name: '🏋️ Fitness & Sports' },
-        { id: 'Education & Tutoring', name: '📚 Education & Tutoring' },
-        { id: 'Home Services & Repairs', name: '🔧 Home Services' }
+        { id: 'all', name: 'All Services', icon: '🌟' },
+        ...(window.INITIAL_CATEGORIES || [])
       ];
 
-      mount.innerHTML = categories.map(cat => `
-        <button class="cat-pill-btn ${cat.id === this.currentCustomerCategory ? 'active' : ''}" 
-                onclick="window.app.filterCustomerCategory('${cat.id}')">
-          ${cat.name}
+      container.innerHTML = categories.map(cat => `
+        <button class="category-pill-btn ${cat.id === this.selectedCustomerCategory ? 'active' : ''}" 
+                onclick="window.app.selectCustomerCategory('${cat.id}')">
+          <span>${cat.icon}</span> <span>${cat.name}</span>
         </button>
       `).join('');
     }
 
-    filterCustomerCategory(catId) {
-      this.currentCustomerCategory = catId;
+    selectCustomerCategory(catId) {
+      this.selectedCustomerCategory = catId;
       this.renderCustomerCategoryPills();
-      this.renderCustomerCatalog();
+      this.renderCustomerMarketplace();
     }
 
-    handleCustomerSearch(query) {
-      this.customerSearchQuery = (query || '').toLowerCase().trim();
-      this.renderCustomerCatalog();
+    filterCustomerServices() {
+      this.renderCustomerMarketplace();
     }
 
-    renderCustomerCatalog() {
-      const mount = document.getElementById('custProvidersGridMount');
-      if (!mount) return;
+    renderCustomerMarketplace() {
+      const container = document.getElementById('providersMarketplaceMount');
+      if (!container) return;
 
-      const providers = window.store.getProviders();
-      let filtered = providers.filter(p => {
-        // Category match
-        if (this.currentCustomerCategory !== 'all' && p.category !== this.currentCustomerCategory) {
-          return false;
+      const searchInput = document.getElementById('custSearchInput');
+      const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
+
+      const providers = window.store.getProviders().filter(p => p.status === 'active');
+
+      const filtered = providers.filter(p => {
+        // Category check
+        if (this.selectedCustomerCategory !== 'all') {
+          const catObj = (window.INITIAL_CATEGORIES || []).find(c => c.id === this.selectedCustomerCategory);
+          if (catObj && p.category !== catObj.name) return false;
         }
-        // Search query
-        if (this.customerSearchQuery) {
-          const matchName = (p.name || '').toLowerCase().includes(this.customerSearchQuery);
-          const matchCat = (p.category || '').toLowerCase().includes(this.customerSearchQuery);
-          const matchSrv = (p.services || []).some(s => s.name.toLowerCase().includes(this.customerSearchQuery));
-          if (!matchName && !matchCat && !matchSrv) return false;
+
+        // Search text check
+        if (query) {
+          const matchBiz = p.name.toLowerCase().includes(query) || p.description.toLowerCase().includes(query) || p.location.toLowerCase().includes(query);
+          const matchServices = (p.services || []).some(s => s.name.toLowerCase().includes(query) || s.description.toLowerCase().includes(query));
+          if (!matchBiz && !matchServices) return false;
         }
+
         return true;
       });
 
-      const countEl = document.getElementById('custCatalogResultsCount');
-      if (countEl) countEl.textContent = `Showing ${filtered.length} service businesses`;
+      const countLabel = document.getElementById('marketplaceCountLabel');
+      if (countLabel) countLabel.textContent = `Showing ${filtered.length} verified businesses`;
 
       if (filtered.length === 0) {
-        mount.innerHTML = `
-          <div style="grid-column: 1 / -1; text-align: center; padding: 48px; color: var(--text-muted);">
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 48px; text-align: center; background: var(--bg-surface); border: 1px dashed var(--border-light); border-radius: var(--radius-xl);">
             <div style="font-size: 32px; margin-bottom: 8px;">🔍</div>
-            <div style="font-weight: 700; font-size: 15px; color: var(--text-main);">No matching services found</div>
-            <p style="font-size: 12px; margin-top: 4px;">Try searching for "haircut", "facial", "dentist", or select All Services.</p>
+            <h4 style="font-size: 16px; font-weight: 700;">No services found matching "${query}"</h4>
+            <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Try searching for "haircut", "facial", "dental", or browse by category.</p>
           </div>
         `;
         return;
       }
 
-      mount.innerHTML = filtered.map(p => `
-        <div class="business-card">
-          <img src="${p.image}" class="business-card-img" alt="${p.name}">
-          <div class="business-card-content">
-            <div class="business-header-row">
-              <div>
-                <h4 class="business-title">${p.name}</h4>
-                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">📍 ${p.address || p.location}</div>
-              </div>
-              <div class="business-rating-badge">
-                <span>⭐</span> <span>${p.rating || 5.0}</span> <span style="font-size: 10px; color: var(--text-muted);">(${p.reviewCount || 0})</span>
-              </div>
+      container.innerHTML = filtered.map(p => {
+        const primaryServices = (p.services || []).slice(0, 3);
+        return `
+          <div class="provider-card">
+            <div class="provider-card-img-wrap">
+              <img src="${p.image}" class="provider-card-img" alt="${p.name}">
+              <span class="provider-card-cat-badge">${p.category}</span>
             </div>
 
-            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.35;">${p.tagline || p.description}</div>
-
-            <!-- Top Services List -->
-            <div class="business-services-list">
-              ${(p.services || []).slice(0, 3).map(s => `
-                <div class="service-item-row">
-                  <span class="service-item-name">• ${s.name} (${s.duration}m)</span>
-                  <span class="service-item-price">$${s.price}</span>
+            <div class="provider-card-content">
+              <div class="provider-card-header">
+                <h4 class="provider-card-title">${p.name}</h4>
+                <div class="provider-rating-pill">
+                  <span>★</span> <span>${p.rating || 5.0}</span>
+                  <span style="font-weight: 500; font-size: 10px; color: var(--text-muted);">(${p.reviewCount || 0})</span>
                 </div>
-              `).join('')}
+              </div>
+
+              <div class="provider-card-loc">
+                <span>📍</span> <span>${p.address}</span>
+              </div>
+
+              <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4;">
+                ${p.tagline || p.description}
+              </p>
+
+              <!-- Services Highlights -->
+              <div class="provider-services-summary">
+                <div style="font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase;">Top Services</div>
+                ${primaryServices.map(s => `
+                  <div class="provider-service-item-row">
+                    <span>${s.name} (${s.duration}m)</span>
+                    <strong style="color: var(--primary-600);">$${s.price}</strong>
+                  </div>
+                `).join('')}
+              </div>
             </div>
 
-            <!-- Main CTA: Book a Slot -->
-            <button class="btn-primary" style="width: 100%; justify-content: center; padding: 10px; font-weight: 700;" onclick="window.app.openCustomerBookSlotModal('${p.id}')">
-              📅 Book a Slot
-            </button>
+            <div class="provider-card-footer">
+              <span style="font-size: 11px; font-weight: 600; color: var(--success-solid);">Open Today • ${p.openTime} - ${p.closeTime}</span>
+              <button class="btn-primary" onclick="window.app.openCustomerSlotBooking('${p.id}')">
+                📅 Book a Slot
+              </button>
+            </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
 
-    // Customer "Book a Slot" Modal Flow
-    openCustomerBookSlotModal(providerId, defaultServiceId) {
+    // Customer Slot Booking Modal Dialog
+    openCustomerSlotBooking(providerId) {
+      this.currentBookingProviderId = providerId;
       const providers = window.store.getProviders();
       const p = providers.find(item => item.id === providerId) || providers[0];
-      if (!p) return;
 
-      document.getElementById('custBookProviderId').value = p.id;
-      document.getElementById('custBookModalProviderName').textContent = `${p.name} • ${p.category} (${p.openTime} - ${p.closeTime})`;
+      document.getElementById('slotModalProviderName').textContent = p.name;
+      document.getElementById('slotModalProviderLocation').textContent = `${p.location} • ${p.address}`;
 
-      // Services dropdown
-      const srvSelect = document.getElementById('custBookServiceSelect');
+      // Populate services
+      const srvSelect = document.getElementById('custSlotServiceSelect');
       srvSelect.innerHTML = (p.services || []).map(s => `
-        <option value="${s.id}" data-price="${s.price}" data-duration="${s.duration}" ${s.id === defaultServiceId ? 'selected' : ''}>
-          ${s.name} — $${s.price} (${s.duration} min)
+        <option value="${s.id}" data-duration="${s.duration}" data-price="${s.price}">
+          ${s.name} — $${s.price} (${s.duration} mins)
         </option>
       `).join('');
 
-      // Specialists dropdown
-      const wrkSelect = document.getElementById('custBookWorkerSelect');
+      // Populate specialists
+      const wrkSelect = document.getElementById('custSlotWorkerSelect');
       wrkSelect.innerHTML = `
-        <option value="">Any Available Specialist</option>
+        <option value="any">Any Available Specialist</option>
         ${(p.workers || []).map(w => `<option value="${w.id}">${w.name} (${w.title})</option>`).join('')}
       `;
 
-      // Date input
-      const dateInput = document.getElementById('custBookDateInput');
+      // Set target date (default to today or tomorrow)
+      const dateInput = document.getElementById('custSlotDateInput');
       dateInput.value = window.getDateOffset(0);
-      dateInput.min = window.getDateOffset(0);
 
-      this.generateAvailableCustomerSlots();
-      this.openModal('customerBookSlotModal');
+      this.onSlotServiceOrDateChange();
+      this.openModal('customerSlotModal');
     }
 
-    handleCustomerServiceChange() {
-      this.generateAvailableCustomerSlots();
-    }
+    onSlotServiceOrDateChange() {
+      const providerId = this.currentBookingProviderId;
+      const p = window.store.getProviders().find(item => item.id === providerId);
+      if (!p) return;
 
-    generateAvailableCustomerSlots() {
-      const providerId = document.getElementById('custBookProviderId').value;
-      const providers = window.store.getProviders();
-      const provider = providers.find(p => p.id === providerId);
-      if (!provider) return;
+      const date = document.getElementById('custSlotDateInput').value;
+      const srvSelect = document.getElementById('custSlotServiceSelect');
+      const selectedOption = srvSelect.options[srvSelect.selectedIndex];
+      const duration = Number(selectedOption.getAttribute('data-duration')) || 45;
 
-      const date = document.getElementById('custBookDateInput').value || window.getDateOffset(0);
-      const workerId = document.getElementById('custBookWorkerSelect').value;
-      const srvSelect = document.getElementById('custBookServiceSelect');
-      const selectedSrvOpt = srvSelect.options[srvSelect.selectedIndex];
-      const duration = selectedSrvOpt ? Number(selectedSrvOpt.getAttribute('data-duration')) || 45 : 45;
+      const workerId = document.getElementById('custSlotWorkerSelect').value;
+      const bookings = window.store.getBookingsForDateAndProvider(date, p.id);
 
-      const slotsGrid = document.getElementById('custAvailableSlotsGrid');
-      const hiddenTimeInput = document.getElementById('custSelectedTimeSlot');
-      hiddenTimeInput.value = '';
+      // Generate intervals between openTime and closeTime
+      const [startHour, startMin] = p.openTime.split(':').map(Number);
+      const [endHour, endMin] = p.closeTime.split(':').map(Number);
+      const startTotal = startHour * 60 + startMin;
+      const endTotal = endHour * 60 + endMin;
 
-      // Get confirmed bookings for this provider & date
-      const existingBookings = window.store.getBookingsForDateAndProvider(date, provider.id);
-
-      // Candidate slot times
-      const candidateTimes = ['09:00', '09:45', '10:30', '11:15', '12:00', '13:30', '14:15', '15:00', '15:45', '16:30', '17:15'];
-
-      // Filter slots that are not fully occupied
-      const workers = workerId ? provider.workers.filter(w => w.id === workerId) : provider.workers;
-      const availableTimes = candidateTimes.filter(t => {
-        // If specific worker chosen, check if worker is busy at this time
-        if (workerId) {
-          return !existingBookings.some(b => b.workerId === workerId && b.time === t);
-        }
-        // If any worker, check if at least one worker is free
-        const occupiedWorkers = existingBookings.filter(b => b.time === t).map(b => b.workerId);
-        return occupiedWorkers.length < (workers.length || 1);
+      const breaks = (p.breaks || []).map(b => {
+        const [sh, sm] = b.start.split(':').map(Number);
+        const [eh, em] = b.end.split(':').map(Number);
+        return { start: sh * 60 + sm, end: eh * 60 + em };
       });
 
-      if (availableTimes.length === 0) {
-        slotsGrid.innerHTML = `
-          <div style="grid-column: 1 / -1; text-align: center; padding: 12px; font-size: 12px; color: var(--urgent-solid); background: var(--urgent-bg); border-radius: var(--radius-sm);">
-            All direct appointment slots are filled for this date. Click below to join the priority Standby Waitlist!
+      const slotsMount = document.getElementById('custAvailableSlotsMount');
+      const slots = [];
+
+      for (let min = startTotal; min + duration <= endTotal; min += 30) {
+        const hh = String(Math.floor(min / 60)).padStart(2, '0');
+        const mm = String(min % 60).padStart(2, '0');
+        const timeStr = `${hh}:${mm}`;
+
+        // Check conflicts
+        const slotEnd = min + duration;
+        const collidesBreak = breaks.some(b => min < b.end && slotEnd > b.start);
+
+        // Worker conflicts
+        let isBooked = false;
+        if (workerId && workerId !== 'any') {
+          isBooked = bookings.some(b => b.workerId === workerId && b.time === timeStr);
+        } else {
+          // If any worker, check if all workers are occupied
+          const occupiedCount = bookings.filter(b => b.time === timeStr).length;
+          isBooked = occupiedCount >= (p.workers || []).length;
+        }
+
+        if (!collidesBreak && !isBooked) {
+          slots.push(timeStr);
+        }
+      }
+
+      this.selectedBookingSlotTime = null;
+      document.getElementById('custSelectedTimeInput').value = '';
+      document.getElementById('custConfirmBookingBtn').disabled = true;
+
+      if (slots.length === 0) {
+        slotsMount.innerHTML = `
+          <div style="background: var(--warning-bg); border: 1px solid var(--warning-border); padding: 12px; border-radius: var(--radius-sm); font-size: 12px; color: var(--warning-text); text-align: center;">
+            ⚠️ All standard slots are booked on ${date}! You can join the live standby waitlist below.
           </div>
         `;
         return;
       }
 
-      slotsGrid.innerHTML = availableTimes.map((t, idx) => `
-        <div class="slot-time-pill ${idx === 0 ? 'selected' : ''}" onclick="window.app.selectTimeSlot('${t}', this)">
-          ${t}
+      slotsMount.innerHTML = `
+        <div class="slot-badges-grid">
+          ${slots.map(t => `
+            <button type="button" class="slot-badge-btn" onclick="window.app.selectBookingSlotBadge('${t}', this)">
+              ${t}
+            </button>
+          `).join('')}
         </div>
-      `).join('');
-
-      // Auto-select first slot
-      if (availableTimes.length > 0) {
-        hiddenTimeInput.value = availableTimes[0];
-      }
+      `;
     }
 
-    selectTimeSlot(timeStr, element) {
-      document.querySelectorAll('.slot-time-pill').forEach(el => el.classList.remove('selected'));
-      element.classList.add('selected');
-      document.getElementById('custSelectedTimeSlot').value = timeStr;
+    selectBookingSlotBadge(timeStr, btnElement) {
+      document.querySelectorAll('.slot-badge-btn').forEach(b => b.classList.remove('selected'));
+      btnElement.classList.add('selected');
+      this.selectedBookingSlotTime = timeStr;
+      document.getElementById('custSelectedTimeInput').value = timeStr;
+      document.getElementById('custConfirmBookingBtn').disabled = false;
     }
 
     submitCustomerSlotBooking(e) {
       e.preventDefault();
       const session = window.store.getCurrentSession();
-      if (!session || !session.isLoggedIn) {
-        this.showToast('Please log in as a customer first.', 'warning');
-        return;
-      }
+      if (!session) return;
 
-      const providerId = document.getElementById('custBookProviderId').value;
+      const providerId = this.currentBookingProviderId;
       const provider = window.store.getProviders().find(p => p.id === providerId);
+      if (!provider) return;
 
-      const srvSelect = document.getElementById('custBookServiceSelect');
-      const selectedSrvOpt = srvSelect.options[srvSelect.selectedIndex];
+      const srvSelect = document.getElementById('custSlotServiceSelect');
       const serviceId = srvSelect.value;
-      const serviceName = selectedSrvOpt.text.split('—')[0].trim();
-      const price = Number(selectedSrvOpt.getAttribute('data-price')) || 50;
-      const duration = Number(selectedSrvOpt.getAttribute('data-duration')) || 45;
+      const srvOption = srvSelect.options[srvSelect.selectedIndex];
+      const serviceName = srvOption.text.split('—')[0].trim();
+      const price = Number(srvOption.getAttribute('data-price')) || 50;
+      const duration = Number(srvOption.getAttribute('data-duration')) || 45;
 
-      const workerSelect = document.getElementById('custBookWorkerSelect');
-      const workerId = workerSelect.value || (provider.workers[0] ? provider.workers[0].id : 'wrk-101');
+      const wrkSelect = document.getElementById('custSlotWorkerSelect');
+      const workerId = wrkSelect.value === 'any' ? (provider.workers[0]?.id || 'wrk-101') : wrkSelect.value;
       const worker = provider.workers.find(w => w.id === workerId) || provider.workers[0];
 
-      const date = document.getElementById('custBookDateInput').value;
-      const time = document.getElementById('custSelectedTimeSlot').value;
-      const notes = document.getElementById('custBookNotesInput').value;
+      const date = document.getElementById('custSlotDateInput').value;
+      const time = this.selectedBookingSlotTime;
+      const notes = document.getElementById('custSlotNotesInput').value;
 
-      if (!time) {
-        this.showToast('Please select an available time slot pill above.', 'warning');
-        return;
-      }
-
-      const booking = window.store.addBooking({
-        customerId: session.id || 'cust-1',
-        customerName: session.name || 'Customer',
+      const newBooking = window.store.addBooking({
+        customerId: session.id || session.customerId || 'cust-1',
+        customerName: session.name || 'Alex Morgan',
         customerEmail: session.email,
-        customerPhone: session.phone || '+1 (555) 777-8899',
+        customerPhone: session.phone || '+1 (555) 000-0000',
         providerId: provider.id,
         providerName: provider.name,
         serviceId,
@@ -544,140 +580,192 @@
         notes
       });
 
-      this.closeModal('customerBookSlotModal');
-      this.showToast(`🎉 Success! Slot booked with ${worker.name} on ${date} at ${time}! Reference: ${booking.bookingId}`, 'success');
-      this.updateCustomerBadges();
+      this.closeModal('customerSlotModal');
+      this.showToast(`🎉 Success! Your appointment is confirmed with ${worker.name} on ${date} at ${time}!`, 'success');
       this.switchCustomerTab('bookings');
     }
 
-    convertBookingToWaitlist() {
+    // Customer Join Waitlist
+    openCustomerStandbyWaitlistModal() {
+      this.closeModal('customerSlotModal');
+      const providerId = this.currentBookingProviderId;
+      const p = window.store.getProviders().find(item => item.id === providerId);
+      if (!p) return;
+
+      const srvSelect = document.getElementById('cwServiceSelect');
+      srvSelect.innerHTML = (p.services || []).map(s => `
+        <option value="${s.id}" data-duration="${s.duration}" data-price="${s.price}">${s.name} — $${s.price}</option>
+      `).join('');
+
+      const wrkSelect = document.getElementById('cwWorkerSelect');
+      wrkSelect.innerHTML = `
+        <option value="">Any Available Specialist</option>
+        ${(p.workers || []).map(w => `<option value="${w.id}">${w.name}</option>`).join('')}
+      `;
+
+      document.getElementById('cwDateInput').value = window.getDateOffset(0);
+      this.openModal('customerWaitlistModal');
+    }
+
+    submitCustomerWaitlist(e) {
+      e.preventDefault();
       const session = window.store.getCurrentSession();
-      const providerId = document.getElementById('custBookProviderId').value;
-      const provider = window.store.getProviders().find(p => p.id === providerId);
+      const provider = window.store.getProviders().find(p => p.id === this.currentBookingProviderId);
+      if (!session || !provider) return;
 
-      const srvSelect = document.getElementById('custBookServiceSelect');
-      const selectedSrvOpt = srvSelect.options[srvSelect.selectedIndex];
+      const srvSelect = document.getElementById('cwServiceSelect');
+      const srvOption = srvSelect.options[srvSelect.selectedIndex];
       const serviceId = srvSelect.value;
-      const serviceName = selectedSrvOpt.text.split('—')[0].trim();
-      const price = Number(selectedSrvOpt.getAttribute('data-price')) || 50;
-      const duration = Number(selectedSrvOpt.getAttribute('data-duration')) || 45;
+      const serviceName = srvOption.text.split('—')[0].trim();
+      const duration = Number(srvOption.getAttribute('data-duration')) || 45;
+      const price = Number(srvOption.getAttribute('data-price')) || 50;
 
-      const date = document.getElementById('custBookDateInput').value;
+      const wrkSelect = document.getElementById('cwWorkerSelect');
+      const workerId = wrkSelect.value || null;
+      const workerName = workerId ? wrkSelect.options[wrkSelect.selectedIndex].text : 'Any Specialist';
 
-      const waitlistEntry = window.store.addWaitlistEntry({
+      const preferredDate = document.getElementById('cwDateInput').value;
+      const preferredTimeRange = document.getElementById('cwTimeWindowSelect').value;
+      const priority = document.getElementById('cwPrioritySelect').value;
+      const notes = document.getElementById('cwNotesInput').value;
+
+      const entry = window.store.addWaitlistEntry({
         providerId: provider.id,
         providerName: provider.name,
-        customerId: session.id || 'cust-1',
-        customerName: session.name || 'Customer',
+        customerId: session.id,
+        customerName: session.name,
         customerEmail: session.email,
         customerPhone: session.phone || '+1 (555) 777-8899',
+        customerAvatar: session.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
         serviceId,
         serviceName,
         duration,
         price,
-        workerId: null,
-        workerName: 'Any Available Specialist',
-        preferredDate: date,
-        preferredTimeRange: 'Flexible Today',
-        priority: 'urgent',
-        notes: 'Customer joined priority standby via customer portal.'
+        workerId,
+        workerName,
+        preferredDate,
+        preferredTimeRange,
+        priority,
+        notes
       });
 
-      this.closeModal('customerBookSlotModal');
-      this.showToast(`⏳ Added to priority standby queue as #${waitlistEntry.position}! You will be notified the moment a slot opens.`, 'info');
+      this.closeModal('customerWaitlistModal');
+      this.showToast(`⏳ Added to standby queue as position #${entry.position}! You'll be alerted when a slot opens.`, 'success');
+      this.switchCustomerTab('bookings');
     }
 
-    // Customer "My Bookings"
     renderCustomerBookings() {
-      const mount = document.getElementById('custMyBookingsList');
-      if (!mount) return;
-
       const session = window.store.getCurrentSession();
-      const allBookings = window.store.getBookings();
-      // Match by customerId or customerEmail
-      const myBookings = allBookings.filter(b => b.customerId === session.id || (b.customerEmail && b.customerEmail.toLowerCase() === (session.email || '').toLowerCase()));
+      if (!session) return;
 
-      if (myBookings.length === 0) {
-        mount.innerHTML = `
-          <div style="text-align: center; padding: 48px; background: var(--bg-surface); border-radius: var(--radius-xl); border: 1px solid var(--border-light);">
-            <div style="font-size: 32px; margin-bottom: 8px;">📅</div>
-            <div style="font-weight: 700; font-size: 16px;">No bookings yet</div>
-            <p style="font-size: 13px; color: var(--text-muted); margin: 6px 0 16px;">Explore certified services and reserve your appointment slot with instant confirmation.</p>
-            <button class="btn-primary" onclick="window.app.switchCustomerTab('explore')">Explore & Book a Slot</button>
+      const custId = session.id || session.customerId;
+      const allBookings = window.store.getBookings().filter(b => b.customerId === custId || b.customerEmail === session.email);
+      const allWaitlist = window.store.getWaitlist().filter(w => w.customerId === custId || w.customerEmail === session.email);
+
+      const todayStr = window.getDateOffset(0);
+
+      const upcoming = allBookings.filter(b => b.date >= todayStr && b.status !== 'cancelled');
+      const completed = allBookings.filter(b => b.status === 'completed' || b.date < todayStr);
+
+      // Render upcoming
+      const mountUpcoming = document.getElementById('custUpcomingBookingsMount');
+      if (mountUpcoming) {
+        mountUpcoming.innerHTML = upcoming.length === 0 ? `
+          <div style="grid-column: 1 / -1; padding: 24px; background: var(--bg-surface); border: 1px dashed var(--border-light); border-radius: var(--radius-lg); text-align: center; color: var(--text-muted);">
+            No upcoming bookings. Click "Explore Services" above to reserve an open slot!
           </div>
-        `;
-        return;
-      }
-
-      mount.innerHTML = myBookings.map(b => {
-        const isCompleted = b.status === 'completed';
-        const isCancelled = b.status === 'cancelled';
-
-        return `
-          <div class="my-booking-card">
-            <div style="display: flex; gap: 14px; align-items: center;">
-              <div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--primary-100); color: var(--primary-600); display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                📅
-              </div>
+        ` : upcoming.map(b => `
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); border-left: 4px solid var(--primary-500); padding: 18px; border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div>
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span class="app-status-pill ${b.status || 'confirmed'}">${b.status || 'confirmed'}</span>
-                  <span style="font-size: 11px; color: var(--text-subtle);">${b.bookingId}</span>
-                </div>
-                <h4 style="font-size: 16px; font-weight: 700; margin-top: 4px;">${b.serviceName}</h4>
-                <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-                  🏢 <strong>${b.providerName}</strong> • Specialist: <strong>${b.workerName}</strong>
-                </div>
-                <div style="font-size: 12px; color: var(--primary-600); font-weight: 600; margin-top: 2px;">
-                  🕒 ${b.date} at ${b.time} (${b.duration} mins) • $${b.price}
-                </div>
+                <span class="app-status-pill ${b.status || 'confirmed'}">${b.status || 'confirmed'}</span>
+                <h4 style="font-size: 15px; font-weight: 700; margin-top: 4px;">${b.serviceName}</h4>
+                <div style="font-size: 12px; color: var(--text-muted);">${b.providerName}</div>
               </div>
+              <span style="font-size: 16px; font-weight: 800; color: var(--primary-600);">$${b.price}</span>
             </div>
-
-            <div style="display: flex; align-items: center; gap: 8px;">
-              ${isCompleted ? `
-                <button class="btn-primary" style="background: linear-gradient(135deg, #F59E0B, #D97706); box-shadow: none;" onclick="window.app.openCustomerReviewModal('${b.bookingId}', '${b.providerId}', '${b.providerName}', '${b.serviceName}')">
-                  ⭐ Leave a Review
-                </button>
-              ` : ''}
-
-              {!isCompleted && !isCancelled ? `
-                <button class="btn-secondary" style="color: var(--urgent-solid); border-color: var(--urgent-border);" onclick="window.app.cancelCustomerBooking('${b.bookingId}')">
-                  Cancel
-                </button>
-              ` : ''}
+            <div style="font-size: 13px; color: var(--text-main); margin-top: 4px;">
+              📅 <strong>${b.date}</strong> at <strong>${b.time}</strong> • 👤 ${b.workerName}
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; border-top: 1px solid var(--border-light); padding-top: 10px;">
+              <span style="font-size: 11px; color: var(--text-muted);">Ref: ${b.bookingId}</span>
+              <button class="btn-secondary" style="font-size: 11px; padding: 4px 10px; color: var(--urgent-solid);" onclick="window.app.customerCancelBooking('${b.bookingId}')">
+                Cancel Slot
+              </button>
             </div>
           </div>
-        `;
-      }).join('');
-    }
+        `).join('');
+      }
 
-    cancelCustomerBooking(bookingId) {
-      if (confirm('Are you sure you want to cancel this booking? This will reopen the slot for others.')) {
-        window.store.updateBooking(bookingId, { status: 'cancelled' });
-        this.showToast('Appointment cancelled.', 'warning');
-        this.renderCustomerBookings();
-        this.updateCustomerBadges();
+      // Render waitlists
+      const mountWaitlist = document.getElementById('custWaitlistMount');
+      if (mountWaitlist) {
+        mountWaitlist.innerHTML = allWaitlist.length === 0 ? `
+          <div style="grid-column: 1 / -1; padding: 24px; background: var(--bg-surface); border: 1px dashed var(--border-light); border-radius: var(--radius-lg); text-align: center; color: var(--text-muted);">
+            You have no active standby waitlist requests.
+          </div>
+        ` : allWaitlist.map(w => `
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 18px; border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="wl-pos-badge">Position #${w.position} in Standby Queue</span>
+              <span class="wl-priority-badge ${w.priority}">${w.priorityLabel || w.priority}</span>
+            </div>
+            <h4 style="font-size: 15px; font-weight: 700;">${w.serviceName}</h4>
+            <div style="font-size: 12px; color: var(--text-muted);">${w.providerName} • ${w.preferredDate}</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Requested: ${w.preferredTimeRange} • Prefers: ${w.workerName || 'Any Specialist'}</div>
+            ${w.status === 'notified' ? `
+              <div style="background: var(--urgent-bg); border: 1px solid var(--urgent-border); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; color: var(--urgent-text); font-weight: 600;">
+                📲 Notification dispatched! A cancellation slot opened up for you!
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+      }
+
+      // Render completed (with review button)
+      const mountCompleted = document.getElementById('custCompletedBookingsMount');
+      if (mountCompleted) {
+        mountCompleted.innerHTML = completed.length === 0 ? `
+          <div style="grid-column: 1 / -1; padding: 24px; background: var(--bg-surface); border: 1px dashed var(--border-light); border-radius: var(--radius-lg); text-align: center; color: var(--text-muted);">
+            No completed appointments yet.
+          </div>
+        ` : completed.map(b => `
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 16px; border-radius: var(--radius-lg); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 700; font-size: 14px;">${b.serviceName}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">${b.providerName} • ${b.date} with ${b.workerName}</div>
+            </div>
+            <button class="btn-secondary" style="font-weight: 700; border-color: var(--warning-border); background: var(--warning-bg); color: var(--warning-text);" onclick="window.app.openReviewModal('${b.bookingId}', '${b.providerId}', '${b.serviceName}', '${b.providerName}')">
+              ⭐ Write Review
+            </button>
+          </div>
+        `).join('');
       }
     }
 
-    // Customer "Reviewing Option"
-    openCustomerReviewModal(bookingId, providerId, providerName, serviceName) {
-      document.getElementById('revBookingId').value = bookingId || '';
-      document.getElementById('revProviderId').value = providerId || '';
-      document.getElementById('revProviderName').textContent = providerName || 'Service Provider';
-      document.getElementById('revServiceName').textContent = serviceName || 'Appointment Service';
-      document.getElementById('revRatingValue').value = 5;
-      document.getElementById('revCommentInput').value = '';
-      this.selectReviewRating(5);
-      this.openModal('customerReviewModal');
+    customerCancelBooking(bookingId) {
+      if (confirm('Cancel this appointment slot? It will be freed for waitlisted clients.')) {
+        window.store.deleteBooking(bookingId);
+        this.showToast('Appointment cancelled successfully.', 'info');
+      }
     }
 
-    selectReviewRating(ratingVal) {
-      document.getElementById('revRatingValue').value = ratingVal;
-      const stars = document.querySelectorAll('#starRatingWidget span');
-      stars.forEach((star, idx) => {
-        star.style.opacity = idx < ratingVal ? '1' : '0.25';
+    // Review & Rating Modal
+    openReviewModal(bookingId, providerId, serviceName, providerName) {
+      document.getElementById('revBookingId').value = bookingId;
+      document.getElementById('revProviderId').value = providerId;
+      document.getElementById('revProviderTitle').textContent = providerName;
+      document.getElementById('revServiceTitle').textContent = serviceName;
+      document.getElementById('revCommentInput').value = '';
+      this.setReviewRating(5);
+      this.openModal('leaveReviewModal');
+    }
+
+    setReviewRating(stars) {
+      document.getElementById('revRatingInput').value = stars;
+      document.querySelectorAll('#starRatingRow .star-rating-item').forEach(el => {
+        const r = Number(el.getAttribute('data-rating'));
+        el.classList.toggle('active', r <= stars);
       });
     }
 
@@ -686,105 +774,45 @@
       const session = window.store.getCurrentSession();
       const bookingId = document.getElementById('revBookingId').value;
       const providerId = document.getElementById('revProviderId').value;
-      const rating = document.getElementById('revRatingValue').value;
+      const rating = Number(document.getElementById('revRatingInput').value) || 5;
       const comment = document.getElementById('revCommentInput').value;
 
       window.store.addReview({
         bookingId,
         providerId,
-        customerId: session.id || 'cust-1',
-        customerName: session.name || 'Verified Client',
+        customerId: session.id,
+        customerName: session.name,
         rating,
         comment
       });
 
-      this.closeModal('customerReviewModal');
-      this.showToast('⭐ Thank you! Your review and star rating has been published.', 'success');
-      this.switchCustomerTab('reviews');
-    }
-
-    renderCustomerReviews() {
-      const mount = document.getElementById('custMyReviewsList');
-      if (!mount) return;
-
-      const session = window.store.getCurrentSession();
-      const allReviews = window.store.getReviews();
-      const myReviews = allReviews.filter(r => r.customerId === session.id);
-
-      if (myReviews.length === 0) {
-        mount.innerHTML = `
-          <div style="text-align: center; padding: 48px; background: var(--bg-surface); border-radius: var(--radius-xl); border: 1px solid var(--border-light);">
-            <div style="font-size: 32px; margin-bottom: 8px;">⭐</div>
-            <div style="font-weight: 700; font-size: 16px;">No reviews submitted yet</div>
-            <p style="font-size: 13px; color: var(--text-muted); margin: 6px 0 16px;">Complete any appointment to write verified ratings and feedback for specialists.</p>
-          </div>
-        `;
-        return;
-      }
-
-      mount.innerHTML = myReviews.map(r => `
-        <div style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 18px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 4px; font-size: 16px; color: #D97706;">
-              ${'⭐'.repeat(r.rating)} <strong style="font-size: 13px; color: var(--text-main); margin-left: 6px;">${r.rating}.0 Rating</strong>
-            </div>
-            <div style="font-size: 11px; color: var(--text-muted);">${r.date}</div>
-          </div>
-          <p style="margin-top: 10px; font-size: 13px; line-height: 1.4; color: var(--text-main);">"${r.comment}"</p>
-        </div>
-      `).join('');
-    }
-
-    updateCustomerBadges() {
-      const session = window.store.getCurrentSession();
-      if (!session) return;
-      const countEl = document.getElementById('custBadgeBookingsCount');
-      if (countEl) {
-        const bookings = window.store.getBookings().filter(b => (b.customerId === session.id || b.customerEmail === session.email) && b.status !== 'cancelled');
-        countEl.textContent = bookings.length;
-      }
+      this.closeModal('leaveReviewModal');
+      this.showToast(`⭐ Review posted! Thank you for rating this service.`, 'success');
     }
 
     // ========================================================
-    // 3. PROVIDER PORTAL LOGIC (SCHEDULO CALENDAR & WAITLIST)
+    // 4. PROVIDER WORKSPACE (SCHEDULO TIMELINE & WAITLIST)
     // ========================================================
     setupProviderPortal(session) {
-      const provider = window.store.getCurrentProvider();
-      if (!provider) return;
-
-      const pName = document.getElementById('activeProviderName');
-      const pCat = document.getElementById('activeProviderCategory');
-      const pImg = document.getElementById('activeProviderImg');
-      const sName = document.getElementById('sidebarUserName');
-
-      if (pName) pName.textContent = provider.name;
-      if (pCat) pCat.textContent = provider.category;
-      if (pImg) pImg.src = provider.image;
-      if (sName) sName.textContent = session.name || provider.name;
-
-      this.updateProviderDateDisplay();
-      this.updateProviderKpis();
+      const nameEl = document.getElementById('sidebarUserName');
+      if (nameEl) nameEl.textContent = session.name || 'Business Owner';
 
       // Mount calendar and waitlist controllers
-      const calMount = document.getElementById('calendarMount');
-      if (calMount && window.calendarController) {
-        window.calendarController.setContainer(calMount);
+      const calendarContainer = document.getElementById('calendarMount');
+      if (calendarContainer && window.calendarController) {
+        window.calendarController.setContainer(calendarContainer);
       }
 
-      const wlMount = document.getElementById('waitlistCardsMount');
-      if (wlMount && window.waitlistController) {
-        window.waitlistController.setContainer(wlMount);
+      const waitlistContainer = document.getElementById('waitlistCardsMount');
+      if (waitlistContainer && window.waitlistController) {
+        window.waitlistController.setContainer(waitlistContainer);
       }
+
+      this.updateDateDisplay();
+      this.updateProviderKpiBar();
     }
 
-    shiftProviderDate(delta) {
-      const cur = new Date(window.store.getSelectedDate());
-      cur.setDate(cur.getDate() + delta);
-      window.store.setSelectedDate(cur.toISOString().split('T')[0]);
-      this.updateProviderDateDisplay();
-    }
-
-    updateProviderDateDisplay() {
+    updateDateDisplay() {
       const dateStr = window.store.getSelectedDate();
       const parts = dateStr.split('-');
       const d = new Date(parts[0], parts[1] - 1, parts[2]);
@@ -794,166 +822,194 @@
 
       const dateText = document.getElementById('currentDateText');
       const dateSub = document.getElementById('currentDateSub');
-      const isToday = dateStr === window.getDateOffset(0);
+      const todayStr = window.getDateOffset(0);
 
       if (dateText) dateText.textContent = `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-      if (dateSub) dateSub.textContent = isToday ? 'Today' : (dateStr > window.getDateOffset(0) ? 'Upcoming' : 'Past');
+      if (dateSub) dateSub.textContent = dateStr === todayStr ? 'Today' : (dateStr > todayStr ? 'Upcoming' : 'Past');
     }
 
-    updateProviderKpis() {
-      const provider = window.store.getCurrentProvider();
-      if (!provider) return;
+    shiftDate(deltaDays) {
+      const curStr = window.store.getSelectedDate();
+      const curDate = new Date(curStr);
+      curDate.setDate(curDate.getDate() + deltaDays);
+      window.store.setSelectedDate(curDate.toISOString().split('T')[0]);
+    }
 
+    updateProviderKpiBar() {
+      const provider = window.store.getCurrentProvider();
       const date = window.store.getSelectedDate();
       const bookings = window.store.getBookingsForDateAndProvider(date, provider.id);
       const waitlist = window.store.getWaitlistForProvider(provider.id);
 
       const totalBookings = bookings.length;
-      const totalRev = bookings.reduce((sum, b) => sum + (Number(b.price) || 0), 0);
-      const activeWl = waitlist.filter(w => w.status !== 'booked').length;
-      const capacity = Math.min(100, Math.round((totalBookings / ((provider.workers || []).length * 7 || 7)) * 100));
+      const totalRevenue = bookings.reduce((sum, b) => sum + (Number(b.price) || 0), 0);
+      const activeWaitlist = waitlist.filter(w => w.status !== 'booked').length;
 
-      const elBook = document.getElementById('kpiBookingsCount');
-      const elWl = document.getElementById('kpiWaitlistCount');
-      const elCap = document.getElementById('kpiCapacityPercent');
-      const elRev = document.getElementById('kpiRevenueTotal');
-      const wlBadge = document.getElementById('sidebarWaitlistBadge');
+      const workersCount = (provider.workers || []).length || 1;
+      const estCapacity = workersCount * 7;
+      const capacityPct = Math.min(100, Math.round((totalBookings / estCapacity) * 100));
 
-      if (elBook) elBook.textContent = `${totalBookings} Slots`;
-      if (elWl) elWl.textContent = `${activeWl} Waiting`;
-      if (elCap) elCap.textContent = `${capacity}% Full`;
-      if (elRev) elRev.textContent = `$${totalRev.toLocaleString()}`;
-      if (wlBadge) wlBadge.textContent = `${activeWl} Live`;
+      const elBookings = document.getElementById('kpiBookingsCount');
+      if (elBookings) elBookings.textContent = `${totalBookings} Slots`;
+
+      const elWaitlist = document.getElementById('kpiWaitlistCount');
+      if (elWaitlist) elWaitlist.textContent = `${activeWaitlist} Waiting`;
+
+      const elCapacity = document.getElementById('kpiCapacityPercent');
+      if (elCapacity) elCapacity.textContent = `${capacityPct}% Full`;
+
+      const elRevenue = document.getElementById('kpiRevenueTotal');
+      if (elRevenue) elRevenue.textContent = `$${totalRevenue.toLocaleString()}`;
     }
 
-    // Provider Modals (New Booking, Add Waitlist, Drawer, Simulator)
+    // Provider Modals
     openNewBookingModal(workerId, timeStr) {
       const provider = window.store.getCurrentProvider();
       const services = provider.services || [];
       const workers = provider.workers || [];
       const customers = window.store.getCustomers();
 
-      const custSelect = document.getElementById('nbCustomerSelect');
-      if (custSelect) {
-        custSelect.innerHTML = customers.map(c => `
-          <option value="${c.id}" data-name="${c.name}" data-phone="${c.phone}" data-email="${c.email}">${c.name} (${c.phone})</option>
-        `).join('');
-      }
-
-      const srvSelect = document.getElementById('nbServiceSelect');
-      if (srvSelect) {
-        srvSelect.innerHTML = services.map(s => `
-          <option value="${s.id}" data-price="${s.price}" data-duration="${s.duration}">${s.name} — $${s.price} (${s.duration}m)</option>
-        `).join('');
-      }
-
-      const wrkSelect = document.getElementById('nbWorkerSelect');
-      if (wrkSelect) {
-        wrkSelect.innerHTML = workers.map(w => `
+      const selectWorker = document.getElementById('nbWorkerSelect');
+      if (selectWorker) {
+        selectWorker.innerHTML = workers.map(w => `
           <option value="${w.id}" ${w.id === workerId ? 'selected' : ''}>${w.name} (${w.title})</option>
         `).join('');
       }
 
-      const dateInput = document.getElementById('nbDateInput');
-      if (dateInput) dateInput.value = window.store.getSelectedDate();
+      const selectService = document.getElementById('nbServiceSelect');
+      if (selectService) {
+        selectService.innerHTML = services.map(s => `
+          <option value="${s.id}" data-price="${s.price}" data-duration="${s.duration}">${s.name} — $${s.price} (${s.duration} min)</option>
+        `).join('');
+      }
 
-      const timeInput = document.getElementById('nbTimeInput');
-      if (timeInput) timeInput.value = timeStr || '10:00';
+      const selectCustomer = document.getElementById('nbCustomerSelect');
+      if (selectCustomer) {
+        selectCustomer.innerHTML = customers.map(c => `
+          <option value="${c.id}" data-name="${c.name}" data-phone="${c.phone}" data-email="${c.email}">${c.name} (${c.phone})</option>
+        `).join('');
+      }
 
+      document.getElementById('nbDateInput').value = window.store.getSelectedDate();
+      document.getElementById('nbTimeInput').value = timeStr || '10:00';
       this.openModal('newBookingModal');
     }
 
     submitNewBooking(e) {
       e.preventDefault();
       const provider = window.store.getCurrentProvider();
+
       const custSelect = document.getElementById('nbCustomerSelect');
-      const optCust = custSelect.options[custSelect.selectedIndex];
+      const opt = custSelect.options[custSelect.selectedIndex];
+      const customerName = opt.getAttribute('data-name');
+      const customerPhone = opt.getAttribute('data-phone');
+      const customerEmail = opt.getAttribute('data-email');
 
       const srvSelect = document.getElementById('nbServiceSelect');
-      const optSrv = srvSelect.options[srvSelect.selectedIndex];
+      const srvOpt = srvSelect.options[srvSelect.selectedIndex];
+      const serviceId = srvSelect.value;
+      const serviceName = srvOpt.text.split('—')[0].trim();
+      const price = Number(srvOpt.getAttribute('data-price')) || 50;
+      const duration = Number(srvOpt.getAttribute('data-duration')) || 45;
 
-      const wrkSelect = document.getElementById('nbWorkerSelect');
-      const optWrk = wrkSelect.options[wrkSelect.selectedIndex];
+      const workerSelect = document.getElementById('nbWorkerSelect');
+      const workerId = workerSelect.value;
+      const workerName = workerSelect.options[workerSelect.selectedIndex].text.split('(')[0].trim();
+
+      const date = document.getElementById('nbDateInput').value;
+      const time = document.getElementById('nbTimeInput').value;
+      const notes = document.getElementById('nbNotesInput').value;
 
       const booking = window.store.addBooking({
         customerId: custSelect.value,
-        customerName: optCust.getAttribute('data-name'),
-        customerEmail: optCust.getAttribute('data-email'),
-        customerPhone: optCust.getAttribute('data-phone'),
+        customerName,
+        customerPhone,
+        customerEmail,
         providerId: provider.id,
         providerName: provider.name,
-        serviceId: srvSelect.value,
-        serviceName: optSrv.text.split('—')[0].trim(),
-        price: Number(optSrv.getAttribute('data-price')) || 50,
-        duration: Number(optSrv.getAttribute('data-duration')) || 45,
-        workerId: wrkSelect.value,
-        workerName: optWrk.text.split('(')[0].trim(),
-        date: document.getElementById('nbDateInput').value,
-        time: document.getElementById('nbTimeInput').value,
-        notes: document.getElementById('nbNotesInput').value
+        serviceId,
+        serviceName,
+        workerId,
+        workerName,
+        date,
+        time,
+        duration,
+        price,
+        notes
       });
 
       this.closeModal('newBookingModal');
-      this.showToast(`Confirmed slot for ${booking.customerName} on ${booking.date} at ${booking.time}!`, 'success');
+      this.showToast(`✅ Booked ${booking.customerName} on ${booking.date} at ${booking.time}!`, 'success');
     }
 
     openAddWaitlistModal() {
       const provider = window.store.getCurrentProvider();
-      const srvSelect = document.getElementById('wlServiceSelect');
-      if (srvSelect) {
-        srvSelect.innerHTML = (provider.services || []).map(s => `
-          <option value="${s.id}" data-price="${s.price}" data-duration="${s.duration}">${s.name} — $${s.price} (${s.duration}m)</option>
-        `).join('');
-      }
+      const services = provider.services || [];
+      const workers = provider.workers || [];
 
-      const wrkSelect = document.getElementById('wlWorkerSelect');
-      if (wrkSelect) {
-        wrkSelect.innerHTML = `
-          <option value="">Any Specialist</option>
-          ${(provider.workers || []).map(w => `<option value="${w.id}">${w.name} (${w.title})</option>`).join('')}
-        `;
-      }
+      document.getElementById('wlServiceSelect').innerHTML = services.map(s => `
+        <option value="${s.id}" data-price="${s.price}" data-duration="${s.duration}">${s.name} — $${s.price}</option>
+      `).join('');
 
-      const dateInput = document.getElementById('wlDateInput');
-      if (dateInput) dateInput.value = window.store.getSelectedDate();
+      document.getElementById('wlWorkerSelect').innerHTML = `
+        <option value="">Any Specialist</option>
+        ${workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}
+      `;
 
+      document.getElementById('wlDateInput').value = window.store.getSelectedDate();
       this.openModal('addWaitlistModal');
     }
 
     submitAddWaitlist(e) {
       e.preventDefault();
       const provider = window.store.getCurrentProvider();
+
+      const customerName = document.getElementById('wlNameInput').value;
+      const customerPhone = document.getElementById('wlPhoneInput').value;
+      const customerEmail = document.getElementById('wlEmailInput').value;
+
       const srvSelect = document.getElementById('wlServiceSelect');
-      const optSrv = srvSelect.options[srvSelect.selectedIndex];
+      const srvOpt = srvSelect.options[srvSelect.selectedIndex];
+      const serviceId = srvSelect.value;
+      const serviceName = srvOpt.text.split('—')[0].trim();
+      const price = Number(srvOpt.getAttribute('data-price')) || 50;
+      const duration = Number(srvOpt.getAttribute('data-duration')) || 45;
 
-      const wrkSelect = document.getElementById('wlWorkerSelect');
-      const workerId = wrkSelect.value || null;
-      const workerName = workerId ? wrkSelect.options[wrkSelect.selectedIndex].text.split('(')[0].trim() : 'Any Specialist';
+      const workerSelect = document.getElementById('wlWorkerSelect');
+      const workerId = workerSelect.value || null;
+      const workerName = workerId ? workerSelect.options[workerSelect.selectedIndex].text : 'Any Specialist';
 
-      const entry = window.store.addWaitlistEntry({
+      const preferredDate = document.getElementById('wlDateInput').value;
+      const preferredTimeRange = document.getElementById('wlTimeWindowSelect').value;
+      const priority = document.getElementById('wlPrioritySelect').value;
+      const notes = document.getElementById('wlNotesInput').value;
+
+      const newEntry = window.store.addWaitlistEntry({
         providerId: provider.id,
         providerName: provider.name,
-        customerName: document.getElementById('wlNameInput').value,
-        customerPhone: document.getElementById('wlPhoneInput').value,
-        customerEmail: document.getElementById('wlEmailInput').value,
-        serviceId: srvSelect.value,
-        serviceName: optSrv.text.split('—')[0].trim(),
-        price: Number(optSrv.getAttribute('data-price')) || 50,
-        duration: Number(optSrv.getAttribute('data-duration')) || 45,
+        customerName,
+        customerPhone,
+        customerEmail,
+        customerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+        serviceId,
+        serviceName,
+        duration,
+        price,
         workerId,
         workerName,
-        preferredDate: document.getElementById('wlDateInput').value,
-        preferredTimeRange: document.getElementById('wlTimeWindowSelect').value,
-        priority: document.getElementById('wlPrioritySelect').value,
-        notes: document.getElementById('wlNotesInput').value
+        preferredDate,
+        preferredTimeRange,
+        priority,
+        notes
       });
 
       this.closeModal('addWaitlistModal');
-      this.showToast(`Client ${entry.customerName} added to waitlist queue as #${entry.position}!`, 'success');
+      this.showToast(`⏳ ${customerName} added to waitlist queue as #${newEntry.position}!`, 'success');
     }
 
     openAppointmentDrawer(bookingId) {
-      const b = window.store.getBookings().find(item => item.bookingId === bookingId);
+      const bookings = window.store.getBookings();
+      const b = bookings.find(item => item.bookingId === bookingId);
       if (!b) return;
 
       const content = document.getElementById('appointmentDrawerContent');
@@ -962,51 +1018,62 @@
           <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 14px;">
             <span class="app-status-pill ${b.status || 'confirmed'}">${b.status || 'confirmed'}</span>
             <h3 style="font-size: 18px; font-weight: 700; margin-top: 6px;">${b.customerName}</h3>
-            <p style="font-size: 11px; color: var(--text-muted);">${b.bookingId}</p>
+            <p style="font-size: 12px; color: var(--text-muted);">${b.bookingId}</p>
           </div>
-          <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
-            <div><strong>Service:</strong> ${b.serviceName} ($${b.price} • ${b.duration}m)</div>
-            <div><strong>Specialist:</strong> ${b.workerName}</div>
-            <div><strong>Date & Time:</strong> ${b.date} at ${b.time}</div>
-            <div><strong>Contact:</strong> ${b.customerPhone} (${b.customerEmail})</div>
-            ${b.notes ? `<div><strong>Notes:</strong> <em>"${b.notes}"</em></div>` : ''}
-          </div>
-          <div style="margin-top: 20px; border-top: 1px solid var(--border-light); padding-top: 14px; display: flex; justify-content: space-between;">
-            <button class="btn-secondary" style="color: var(--urgent-solid);" onclick="window.app.cancelProviderBooking('${b.bookingId}')">Cancel Booking</button>
-            <button class="btn-primary" onclick="window.app.closeModal('appointmentDrawerModal')">Done</button>
+          <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px;">
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase;">Service</div>
+              <div style="font-weight: 600;">${b.serviceName} ($${b.price})</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase;">Specialist & Time</div>
+              <div>${b.date} at ${b.time} with ${b.workerName}</div>
+            </div>
+            <div>
+              <div style="font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase;">Client Contact</div>
+              <div>📞 ${b.customerPhone} • ✉️ ${b.customerEmail}</div>
+            </div>
+            <div style="margin-top: 8px;">
+              <div style="font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; margin-bottom: 6px;">Change Status</div>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn-secondary" onclick="window.app.updateStatus('${b.bookingId}', 'confirmed')">Confirmed</button>
+                <button class="btn-secondary" onclick="window.app.updateStatus('${b.bookingId}', 'in-progress')">In Progress</button>
+                <button class="btn-secondary" onclick="window.app.updateStatus('${b.bookingId}', 'completed')">Completed</button>
+              </div>
+            </div>
           </div>
         `;
       }
       this.openModal('appointmentDrawerModal');
     }
 
-    cancelProviderBooking(bookingId) {
-      if (confirm('Cancel this appointment and reopen the slot?')) {
-        window.store.deleteBooking(bookingId);
-        this.closeModal('appointmentDrawerModal');
-        this.showToast('Appointment cancelled and slot opened!', 'warning');
-      }
+    updateStatus(bookingId, status) {
+      window.store.updateBooking(bookingId, { status });
+      this.closeModal('appointmentDrawerModal');
+      this.showToast(`Updated booking status to ${status}`, 'info');
     }
 
+    // Phone Notification Simulator
     simulateNotification(waitlistId) {
-      const entry = window.store.getWaitlist().find(w => w.id === waitlistId);
+      const waitlist = window.store.getWaitlist();
+      const entry = waitlist.find(w => w.id === waitlistId);
       if (!entry) return;
 
       const provider = window.store.getCurrentProvider();
-      const content = document.getElementById('phoneSimulatorContent');
-      if (content) {
-        content.innerHTML = `
-          <div style="font-weight: 700; font-size: 13px; color: var(--text-muted); text-align: center; margin-bottom: 4px;">
-            Messages • ${entry.customerName}
+      const phoneContent = document.getElementById('phoneSimulatorContent');
+      if (phoneContent) {
+        phoneContent.innerHTML = `
+          <div style="font-weight: 700; font-size: 12px; color: var(--text-muted); text-align: center; margin-bottom: 6px;">
+            Messages with ${entry.customerName}
           </div>
           <div class="sms-bubble">
-            <strong>BookNGo Notification:</strong><br>
-            Hi ${entry.customerName}! A cancellation slot just opened at <strong>${provider.name}</strong> for <em>${entry.serviceName}</em> (${entry.preferredDate})!<br><br>
-            ⏳ Reply <strong>YES</strong> within 15 minutes to lock in this slot!
+            <strong>BookNGo Notification for ${entry.customerName}:</strong><br>
+            A cancellation slot just opened up at <strong>${provider.name}</strong> for <em>${entry.serviceName}</em> (${entry.preferredDate})!<br><br>
+            ⏳ Reply <strong>YES</strong> within 15 minutes to secure this slot.
           </div>
           <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 8px;">
-            <button class="btn-primary" style="width: 100%; justify-content: center;" onclick="window.app.confirmDispatchSms('${entry.id}')">
-              📲 Send Alert SMS
+            <button class="btn-primary" style="width: 100%; justify-content: center;" onclick="window.app.dispatchSms('${entry.id}')">
+              📲 Send SMS Alert
             </button>
             <button class="btn-secondary" style="width: 100%; justify-content: center; background: #ECFDF5; border-color: #A7F3D0; color: #065F46;" onclick="window.app.simulateCustomerYes('${entry.id}')">
               ⚡ Simulate Customer Replying "YES"
@@ -1017,87 +1084,113 @@
       this.openModal('phoneSimulatorModal');
     }
 
-    confirmDispatchSms(id) {
-      window.store.notifyWaitlistClient(id);
+    dispatchSms(waitlistId) {
+      window.store.notifyWaitlistClient(waitlistId);
       this.closeModal('phoneSimulatorModal');
-      this.showToast('SMS dispatched to customer! 15m claim window started.', 'info');
+      this.showToast('SMS dispatched to client! Live 15-minute response window active.', 'info');
     }
 
-    simulateCustomerYes(id) {
-      const matches = window.store.findSmartMatches(id);
-      const match = matches[0] || { workerId: 'wrk-101', date: window.store.getSelectedDate(), time: '14:00' };
-      const booking = window.store.assignWaitlistToSlot(id, match.workerId, match.date, match.time);
+    simulateCustomerYes(waitlistId) {
+      const waitlist = window.store.getWaitlist();
+      const entry = waitlist.find(w => w.id === waitlistId);
+      if (!entry) return;
+
+      const matches = window.store.findSmartMatches(waitlistId);
+      const match = matches[0] || { workerId: entry.workerId || 'wrk-101', date: entry.preferredDate, time: '14:00' };
+
+      const b = window.store.assignWaitlistToSlot(waitlistId, match.workerId, match.date, match.time);
       this.closeModal('phoneSimulatorModal');
-      this.showToast(`🎉 Customer replied YES! Confirmed slot at ${booking.time}!`, 'success');
+      this.showToast(`🎉 Customer confirmed! Booked appointment on ${b.date} at ${b.time}!`, 'success');
     }
 
     // ========================================================
-    // 4. ADMIN PORTAL LOGIC
+    // 5. ADMIN PORTAL WORKFLOW
     // ========================================================
     setupAdminPortal(session) {
       const providers = window.store.getProviders();
       const customers = window.store.getCustomers();
       const bookings = window.store.getBookings();
-      const reviews = window.store.getReviews();
+      const waitlist = window.store.getWaitlist();
 
-      const statProv = document.getElementById('adminStatProviders');
-      const statCust = document.getElementById('adminStatCustomers');
-      const statBook = document.getElementById('adminStatBookings');
-      const statRev = document.getElementById('adminStatReviews');
+      document.getElementById('adminTotalProviders').textContent = providers.length;
+      document.getElementById('adminTotalCustomers').textContent = customers.length;
+      document.getElementById('adminTotalBookings').textContent = bookings.length;
+      document.getElementById('adminTotalWaitlist').textContent = waitlist.filter(w => w.status !== 'booked').length;
 
-      if (statProv) statProv.textContent = providers.length;
-      if (statCust) statCust.textContent = customers.length;
-      if (statBook) statBook.textContent = bookings.length;
-      if (statRev) statRev.textContent = reviews.length;
+      // Render Providers Table
+      const provTable = document.getElementById('adminProvidersTableBody');
+      if (provTable) {
+        provTable.innerHTML = providers.map(p => `
+          <tr>
+            <td><strong>${p.name}</strong></td>
+            <td>${p.category}</td>
+            <td>${p.location}</td>
+            <td>${p.email}</td>
+            <td><span class="app-status-pill ${p.status === 'active' ? 'confirmed' : 'in-progress'}">${p.status}</span></td>
+            <td>
+              ${p.status === 'pending' ? `
+                <button class="btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="window.app.adminApproveBiz('${p.id}')">Approve</button>
+              ` : `
+                <button class="btn-secondary" style="padding: 4px 10px; font-size: 11px; color: var(--urgent-solid);" onclick="window.app.adminRejectBiz('${p.id}')">Deactivate</button>
+              `}
+            </td>
+          </tr>
+        `).join('');
+      }
 
-      const mount = document.getElementById('adminProvidersTableMount');
-      if (mount) {
-        mount.innerHTML = providers.map(p => `
-          <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--bg-surface-alt); border-radius: var(--radius-md); border: 1px solid var(--border-light);">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <img src="${p.image}" style="width: 38px; height: 38px; border-radius: var(--radius-sm); object-fit: cover;">
-              <div>
-                <div style="font-weight: 700; font-size: 13px;">${p.name}</div>
-                <div style="font-size: 11px; color: var(--text-muted);">${p.category} • ${p.email}</div>
-              </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span class="app-status-pill ${p.status === 'active' ? 'confirmed' : 'in-progress'}">${p.status}</span>
-              <button class="btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="window.app.toggleProviderStatus('${p.id}')">
-                Toggle Status
-              </button>
-            </div>
-          </div>
+      // Render Reports Table
+      const repTable = document.getElementById('adminReportsTableBody');
+      if (repTable) {
+        const reports = window.store.getReports();
+        repTable.innerHTML = reports.map(r => `
+          <tr>
+            <td><code>${r.bookingId}</code></td>
+            <td>${r.providerName}</td>
+            <td>${r.customerName}</td>
+            <td>${r.details}</td>
+            <td><span class="app-status-pill ${r.status === 'Resolved' ? 'completed' : 'in-progress'}">${r.status}</span></td>
+            <td>
+              ${r.status !== 'Resolved' ? `
+                <button class="btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="window.app.adminResolveReport('${r.id}')">Mark Resolved</button>
+              ` : '<span style="color: var(--success-solid); font-weight: 600; font-size: 11px;">✓ Resolved</span>'}
+            </td>
+          </tr>
         `).join('');
       }
     }
 
-    toggleProviderStatus(providerId) {
-      const providers = window.store.getProviders();
-      const p = providers.find(item => item.id === providerId);
-      if (p) {
-        p.status = p.status === 'active' ? 'suspended' : 'active';
-        localStorage.setItem('bng_providers_v1', JSON.stringify(providers));
-        this.setupAdminPortal(window.store.getCurrentSession());
-        this.showToast(`Updated status for ${p.name} to ${p.status}`, 'info');
-      }
+    adminApproveBiz(providerId) {
+      window.store.approveProvider(providerId);
+      this.setupAdminPortal(window.store.getCurrentSession());
+      this.showToast('Business approved and live on marketplace!', 'success');
     }
 
-    // Modal Helpers
-    openModal(id) {
-      const el = document.getElementById(id);
-      if (el) el.classList.add('open');
+    adminRejectBiz(providerId) {
+      window.store.rejectProvider(providerId);
+      this.setupAdminPortal(window.store.getCurrentSession());
+      this.showToast('Business deactivated.', 'warning');
     }
 
-    closeModal(id) {
-      const el = document.getElementById(id);
-      if (el) el.classList.remove('open');
+    adminResolveReport(reportId) {
+      window.store.resolveReport(reportId, 'Reviewed and settled by Admin');
+      this.setupAdminPortal(window.store.getCurrentSession());
+      this.showToast('Report marked resolved.', 'success');
+    }
+
+    // Modal helpers
+    openModal(modalId) {
+      document.getElementById(modalId)?.classList.add('open');
+    }
+
+    closeModal(modalId) {
+      document.getElementById(modalId)?.classList.remove('open');
     }
 
     closeAllModals() {
       document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
     }
 
+    // Command Palette
     openCommandPalette() {
       this.openModal('commandPaletteModal');
       const input = document.getElementById('commandSearchInput');
@@ -1110,20 +1203,36 @@
 
     renderCommandResults(query) {
       const q = (query || '').toLowerCase().trim();
-      const mount = document.getElementById('commandResultsList');
-      if (!mount) return;
+      const container = document.getElementById('commandResultsList');
+      if (!container) return;
 
-      const services = window.store.getProviders().flatMap(p => p.services || []);
-      const matched = services.filter(s => s.name.toLowerCase().includes(q));
+      const providers = window.store.getProviders();
+      const bookings = window.store.getBookings();
+      const matchedProviders = providers.filter(p => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
+      const matchedBookings = bookings.filter(b => b.customerName.toLowerCase().includes(q) || b.serviceName.toLowerCase().includes(q));
 
-      mount.innerHTML = matched.slice(0, 6).map(s => `
-        <div style="padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg-surface-alt); cursor: pointer; display: flex; justify-content: space-between; margin-bottom: 6px;" onclick="window.app.closeModal('commandPaletteModal'); window.app.handleCustomerSearch('${s.name}');">
-          <strong>${s.name}</strong>
-          <span style="color: var(--primary-600); font-weight: 700;">$${s.price} (${s.duration}m)</span>
+      container.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase;">Businesses (${matchedProviders.length})</div>
+          ${matchedProviders.slice(0, 3).map(p => `
+            <div style="padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg-surface-alt); cursor: pointer; display: flex; justify-content: space-between;" onclick="window.app.closeModal('commandPaletteModal'); window.app.openCustomerSlotBooking('${p.id}');">
+              <div><strong>${p.name}</strong> • ${p.category}</div>
+              <div style="color: var(--primary-600); font-size: 11px; font-weight: 600;">Book a Slot →</div>
+            </div>
+          `).join('')}
+
+          <div style="font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; margin-top: 8px;">Bookings (${matchedBookings.length})</div>
+          ${matchedBookings.slice(0, 3).map(b => `
+            <div style="padding: 8px 12px; border-radius: var(--radius-sm); background: var(--bg-surface-alt); display: flex; justify-content: space-between;">
+              <div><strong>${b.customerName}</strong> • ${b.serviceName}</div>
+              <div style="color: var(--text-muted); font-size: 11px;">${b.date} at ${b.time}</div>
+            </div>
+          `).join('')}
         </div>
-      `).join('');
+      `;
     }
 
+    // Toast alert
     showToast(message, type = 'info') {
       const container = document.getElementById('toastContainer');
       if (!container) return;

@@ -3,88 +3,108 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BookNGo — Multi-Role Appointment Booking & Waitlist Platform</title>
-  <meta name="description" content="Online appointment booking, live calendar waitlists, slot reservation, and provider management for customers, businesses, and admins.">
+  <title>BookNGo — Appointment Booking & Waitlist Platform</title>
+  <meta name="description" content="Online appointment booking platform with live waitlist queue and multi-role access for customers, providers, and administrators.">
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
   <!-- ========================================================
-       1. ROLE SELECTION & AUTH GATEWAY (FIRST PAGE ON LOAD)
+       PORTAL 1: ROLE SELECTION & AUTHENTICATION LANDING
        ======================================================== -->
-  <div class="auth-gateway-overlay" id="authGatewayOverlay">
-    <div class="auth-container">
-      <div class="auth-header">
-        <div class="auth-brand-logo">B</div>
-        <h1 class="auth-title">Welcome to BookNGo</h1>
-        <p class="auth-subtitle">Please select your account role to log in or register</p>
-      </div>
-
-      <!-- 3 Role Selection Cards -->
-      <div class="role-cards-grid">
-        <!-- Role 1: Customer -->
-        <div class="role-card selected" id="roleCardCustomer" onclick="window.app.selectAuthRole('customer')">
-          <div class="role-card-icon">👤</div>
-          <div class="role-card-title">Customer</div>
-          <div class="role-card-desc">Search services, book live slots, manage appointments & leave reviews</div>
+  <div class="portal-view active" id="authPortal">
+    <div class="auth-page-wrapper">
+      <div class="auth-card-container">
+        <!-- Logo & Title -->
+        <div class="auth-header">
+          <div class="auth-logo-badge">
+            <div class="brand-logo-icon">B</div>
+            <span class="brand-title" style="font-size: 20px;">BookNGo <span class="pro-chip">PRO</span></span>
+          </div>
+          <h1 class="auth-header-title">Welcome to BookNGo</h1>
+          <p class="auth-header-desc">Select your portal to continue. Book verified specialist slots, manage your business appointment calendar, or administer the platform.</p>
         </div>
 
-        <!-- Role 2: Provider -->
-        <div class="role-card" id="roleCardProvider" onclick="window.app.selectAuthRole('provider')">
-          <div class="role-card-icon">🏢</div>
-          <div class="role-card-title">Business Provider</div>
-          <div class="role-card-desc">Manage specialist schedules, live waitlist queue & incoming bookings</div>
-        </div>
-
-        <!-- Role 3: Admin -->
-        <div class="role-card" id="roleCardAdmin" onclick="window.app.selectAuthRole('admin')">
-          <div class="role-card-icon">🛡️</div>
-          <div class="role-card-title">Administrator</div>
-          <div class="role-card-desc">Platform analytics, verify businesses, resolve disputes & audit logs</div>
-        </div>
-      </div>
-
-      <!-- Auth Form Card -->
-      <div class="auth-form-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-          <h3 style="font-size: 15px; font-weight: 700;" id="authFormTitle">Log in as Customer</h3>
-          <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn-secondary" id="authTabLogin" style="padding: 4px 10px; font-size: 11px; background: var(--bg-surface); font-weight: 700;" onclick="window.app.toggleAuthMode('login')">Sign In</button>
-            <button type="button" class="btn-secondary" id="authTabRegister" style="padding: 4px 10px; font-size: 11px;" onclick="window.app.toggleAuthMode('register')">New Account</button>
+        <!-- Role Selector 3-Card Grid -->
+        <div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 8px;">1. Select Your Role</div>
+          <div class="role-cards-grid">
+            <div class="role-card selected" id="roleCardCustomer" onclick="window.app.selectAuthRole('customer')">
+              <span class="role-card-icon">👤</span>
+              <span class="role-card-title">Customer</span>
+              <span class="role-card-desc">Search services, book slots & review specialists</span>
+            </div>
+            <div class="role-card" id="roleCardProvider" onclick="window.app.selectAuthRole('provider')">
+              <span class="role-card-icon">🏢</span>
+              <span class="role-card-title">Provider</span>
+              <span class="role-card-desc">Business calendar, staff & waitlist queue</span>
+            </div>
+            <div class="role-card" id="roleCardAdmin" onclick="window.app.selectAuthRole('admin')">
+              <span class="role-card-icon">🛡️</span>
+              <span class="role-card-title">Admin</span>
+              <span class="role-card-desc">Platform approvals, reports & analytics</span>
+            </div>
           </div>
         </div>
 
-        <form id="authMainForm" onsubmit="window.app.handleAuthSubmit(event)">
-          <!-- Name field for registration -->
-          <div class="form-group" id="authNameGroup" style="display: none; margin-bottom: 10px;">
-            <label class="form-label">Full Name / Business Name</label>
-            <input type="text" id="authNameInput" class="form-input" placeholder="e.g. Alex Morgan or Luxe Salon">
+        <!-- Auth Tabs: Sign In / Create Account -->
+        <div>
+          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 8px;">2. Authentication</div>
+          <div class="auth-tabs">
+            <button class="auth-tab-btn active" id="authTabSignIn" onclick="window.app.switchAuthMode('signin')">Sign In</button>
+            <button class="auth-tab-btn" id="authTabSignUp" onclick="window.app.switchAuthMode('signup')">Create Account</button>
+          </div>
+        </div>
+
+        <!-- Auth Form -->
+        <form class="auth-form" onsubmit="window.app.handleAuthSubmit(event)">
+          <!-- Dynamic signup fields -->
+          <div class="form-group" id="authNameField" style="display: none;">
+            <label class="form-label">Full Name</label>
+            <input type="text" id="authNameInput" class="form-input" placeholder="e.g. Alex Morgan">
           </div>
 
-          <!-- Email (Gmail) -->
-          <div class="form-group" style="margin-bottom: 10px;">
-            <label class="form-label">Email (Gmail / Work Email)</label>
+          <div class="form-group" id="authBizField" style="display: none;">
+            <label class="form-label">Business / Shop Name</label>
+            <input type="text" id="authBizNameInput" class="form-input" placeholder="e.g. Modern Aesthetics Lounge">
+          </div>
+
+          <div class="form-group" id="authCatField" style="display: none;">
+            <label class="form-label">Business Category</label>
+            <select id="authBizCatInput" class="form-select">
+              <option value="Salons & Spas">Salons & Spas</option>
+              <option value="Beauty & Wellness">Beauty & Wellness</option>
+              <option value="Healthcare & Clinics">Healthcare & Clinics</option>
+              <option value="Fitness & Sports">Fitness & Sports</option>
+              <option value="Education & Tutoring">Education & Tutoring</option>
+              <option value="Home Services & Repairs">Home Services & Repairs</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email / Gmail Address</label>
             <input type="email" id="authEmailInput" class="form-input" placeholder="name@gmail.com" required value="alex@demo.com">
           </div>
 
-          <!-- Password -->
-          <div class="form-group" style="margin-bottom: 14px;">
+          <div class="form-group">
             <label class="form-label">Password</label>
-            <input type="password" id="authPasswordInput" class="form-input" placeholder="Enter your password" required value="password123">
+            <input type="password" id="authPasswordInput" class="form-input" placeholder="••••••••" required value="password123">
           </div>
 
-          <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 10px;" id="authSubmitBtn">
-            Continue as Customer
+          <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px;" id="authSubmitBtn">
+            Sign In to BookNGo
           </button>
         </form>
 
-        <!-- Quick 1-Click Demo Login Shortcuts -->
-        <div class="auth-quick-login-row">
-          <span style="color: var(--text-subtle);">Fast 1-Click Demo Logins:</span>
-          <span class="quick-demo-pill" onclick="window.app.quickLoginDemo('customer')">👤 Customer (Alex Morgan)</span>
-          <span class="quick-demo-pill" onclick="window.app.quickLoginDemo('provider')">🏢 Provider (Aurora Salon)</span>
-          <span class="quick-demo-pill" onclick="window.app.quickLoginDemo('admin')">🛡️ Admin Portal</span>
+        <!-- Quick 1-Click Demo Shortcut Chips -->
+        <div class="quick-demo-accounts">
+          <span class="quick-demo-title">⚡ Or Test Immediately with 1-Click Demo Profiles</span>
+          <div class="quick-demo-buttons">
+            <button class="demo-chip-btn" onclick="window.app.quickDemoLogin('customer')">👤 Demo Customer</button>
+            <button class="demo-chip-btn" onclick="window.app.quickDemoLogin('provider')">🏢 Demo Provider (Salon)</button>
+            <button class="demo-chip-btn" onclick="window.app.quickDemoLogin('admin')">🛡️ Demo Admin</button>
+          </div>
         </div>
       </div>
     </div>
@@ -92,334 +112,117 @@
 
 
   <!-- ========================================================
-       2. CUSTOMER PORTAL (SEARCH SERVICES, BOOK A SLOT, REVIEWS)
+       PORTAL 2: CUSTOMER PORTAL (SEARCH SERVICES & BOOK A SLOT)
        ======================================================== -->
-  <div class="customer-portal" id="customerPortal" style="display: none;">
-    <!-- Customer Header -->
-    <header class="customer-top-nav">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div class="brand-logo-icon" style="width: 32px; height: 32px; font-size: 16px;">B</div>
-        <div style="font-weight: 800; font-size: 16px; letter-spacing: -0.01em;">BookNGo</div>
-      </div>
-
-      <div class="cust-nav-links">
-        <button class="cust-nav-btn active" id="custTabExplore" onclick="window.app.switchCustomerTab('explore')">
-          🔍 Explore Services
-        </button>
-        <button class="cust-nav-btn" id="custTabBookings" onclick="window.app.switchCustomerTab('bookings')">
-          📅 My Bookings <span class="nav-badge" id="custBadgeBookingsCount">0</span>
-        </button>
-        <button class="cust-nav-btn" id="custTabReviews" onclick="window.app.switchCustomerTab('reviews')">
-          ⭐ My Reviews
-        </button>
-      </div>
-
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div style="text-align: right;">
-          <div style="font-size: 12px; font-weight: 700;" id="custHeaderName">Alex Morgan</div>
-          <div style="font-size: 10px; color: var(--text-muted);">Verified Customer</div>
-        </div>
-        <button class="btn-secondary" style="font-size: 11px; padding: 6px 12px;" onclick="window.app.logoutUser()" title="Log out and switch account">
-          🚪 Switch Role / Log Out
-        </button>
-      </div>
-    </header>
-
-    <!-- TAB 1: Explore & Book Services -->
-    <div id="custSectionExplore">
-      <!-- Hero Section with Search -->
-      <section class="customer-hero-section">
-        <h2 class="cust-hero-title">Book Top Services in Seconds</h2>
-        <p class="cust-hero-subtitle">Discover certified salons, medical clinics, fitness coaches, and repair pros. Reserve an instant open slot or join a standby waitlist.</p>
-
-        <!-- Search Bar -->
-        <div class="cust-search-bar">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-muted);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" class="cust-search-input" id="custSearchInput" placeholder="Search hair cut, doctor checkup, teeth cleaning, personal trainer..." oninput="window.app.handleCustomerSearch(this.value)">
-        </div>
-
-        <!-- Category Pills -->
-        <div class="cust-category-pills" id="custCategoryPillsMount">
-          <!-- Populated by app.js -->
-        </div>
-      </section>
-
-      <!-- Business & Services Catalog Grid -->
-      <section class="customer-catalog-section">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <h3 style="font-size: 18px; font-weight: 700;">Available Service Providers</h3>
-          <span style="font-size: 12px; color: var(--text-muted);" id="custCatalogResultsCount">Showing 11 businesses</span>
-        </div>
-        <div class="providers-grid" id="custProvidersGridMount">
-          <!-- Populated by app.js -->
-        </div>
-      </section>
-    </div>
-
-    <!-- TAB 2: My Bookings -->
-    <div id="custSectionBookings" style="display: none; padding: 28px; max-width: 900px; margin: 0 auto; width: 100%;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="font-size: 22px; font-weight: 800;">My Bookings & Reservations</h2>
-        <button class="btn-primary" onclick="window.app.switchCustomerTab('explore')">+ Book Another Slot</button>
-      </div>
-      <div id="custMyBookingsList" style="display: flex; flex-direction: column; gap: 14px;">
-        <!-- Populated by app.js -->
-      </div>
-    </div>
-
-    <!-- TAB 3: My Reviews -->
-    <div id="custSectionReviews" style="display: none; padding: 28px; max-width: 900px; margin: 0 auto; width: 100%;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="font-size: 22px; font-weight: 800;">My Reviews & Feedback</h2>
-      </div>
-      <div id="custMyReviewsList" style="display: flex; flex-direction: column; gap: 14px;">
-        <!-- Populated by app.js -->
-      </div>
-    </div>
-  </div>
-
-
-  <!-- ========================================================
-       3. PROVIDER PORTAL (SCHEDULO CALENDAR & WAITLIST DASHBOARD)
-       ======================================================== -->
-  <div class="app-layout" id="providerPortal" style="display: none;">
-    <!-- Provider Sidebar Navigation -->
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <a href="#" class="brand-badge-container">
+  <div class="portal-view" id="customerPortal">
+    <div class="customer-layout">
+      <!-- Customer Navbar -->
+      <header class="customer-navbar">
+        <div class="brand-badge-container">
           <div class="brand-logo-icon">B</div>
           <div class="brand-titles">
-            <span class="brand-title">BookNGo <span class="pro-chip">PROVIDER</span></span>
-            <span class="brand-subtitle">Calendar & Waitlist</span>
-          </div>
-        </a>
-        <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Toggle Sidebar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
-        </button>
-      </div>
-
-      <!-- Business Name Card -->
-      <div class="provider-selector-wrap">
-        <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--bg-surface-alt); border-radius: var(--radius-md);">
-          <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=120&q=80" id="activeProviderImg" class="provider-avatar-mini" alt="Provider">
-          <div style="overflow: hidden; flex: 1;">
-            <div class="provider-name-mini" id="activeProviderName">Aurora Glow Salon & Spa</div>
-            <div class="provider-cat-mini" id="activeProviderCategory">Salons & Spas</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Provider Nav Links -->
-      <nav class="sidebar-nav">
-        <span class="nav-section-label">Operations</span>
-        <a href="#" class="nav-item active" onclick="window.store.setView('timeline')">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-          <span class="nav-label">Staff Timeline Calendar</span>
-        </a>
-        <a href="#" class="nav-item" onclick="window.store.setView('waitlist-board')">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <span class="nav-label">Waitlist Queue</span>
-          <span class="nav-badge urgent" id="sidebarWaitlistBadge">Live</span>
-        </a>
-        <a href="#" class="nav-item" onclick="window.app.openCommandPalette()">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <span class="nav-label">Quick Search</span>
-          <span class="nav-badge">⌘K</span>
-        </a>
-
-        <span class="nav-section-label" style="margin-top: 14px;">Account</span>
-        <a href="#" class="nav-item" onclick="window.app.logoutUser()">
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
-          <span class="nav-label">Switch Role / Log Out</span>
-        </a>
-      </nav>
-
-      <!-- Sidebar Footer -->
-      <div class="sidebar-footer">
-        <div class="profile-card">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" class="profile-avatar" alt="Provider User">
-          <div class="profile-text">
-            <div class="profile-name" id="sidebarUserName">Business Provider</div>
-            <div class="profile-role">Provider Account</div>
-          </div>
-        </div>
-        <button class="icon-btn" id="themeToggleBtn" title="Toggle Dark/Light Mode">
-          🌙
-        </button>
-      </div>
-    </aside>
-
-    <!-- Main Workspace -->
-    <main class="main-workspace">
-      <!-- Top Application Header -->
-      <header class="top-header">
-        <div class="date-nav-group">
-          <button class="btn-today" id="btnToday">Today</button>
-          <button class="nav-arrow-btn" id="btnPrevDate" title="Previous Day">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
-          </button>
-          <button class="nav-arrow-btn" id="btnNextDate" title="Next Day">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
-          </button>
-          <div class="current-date-title">
-            <span id="currentDateText">Loading...</span>
-            <span class="current-date-sub" id="currentDateSub">Today</span>
+            <span class="brand-title">BookNGo</span>
+            <span class="brand-subtitle">Customer Portal</span>
           </div>
         </div>
 
-        <div class="global-search-wrap">
-          <svg class="search-icon-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" class="search-input" placeholder="Search appointments, staff, waitlist..." onclick="window.app.openCommandPalette()" readonly>
-          <span class="search-kbd-shortcut">⌘K</span>
+        <!-- Navigation Tabs -->
+        <div class="cust-nav-links">
+          <button class="cust-nav-btn active" id="custNavExplore" onclick="window.app.switchCustomerTab('explore')">
+            🔍 Explore Services
+          </button>
+          <button class="cust-nav-btn" id="custNavBookings" onclick="window.app.switchCustomerTab('bookings')">
+            📅 My Appointments & Waitlist
+          </button>
         </div>
 
-        <div class="header-right-actions">
-          <div class="view-switcher">
-            <button class="view-btn active" data-view="timeline">Timeline</button>
-            <button class="view-btn" data-view="week">Week</button>
-            <button class="view-btn" data-view="waitlist-board">Waitlist Board</button>
+        <!-- User Profile Pill & Actions -->
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div class="profile-card" style="background: var(--bg-surface-alt); padding: 4px 12px; border-radius: var(--radius-full);">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" id="custUserAvatar" class="profile-avatar" style="width: 26px; height: 26px;">
+            <span class="profile-name" id="custUserName" style="font-size: 12px;">Alex Morgan</span>
           </div>
-
-          <button class="btn-secondary btn-waitlist-action" onclick="window.app.openAddWaitlistModal()">
-            <span>⏳</span> <span>+ Waitlist</span>
-          </button>
-
-          <button class="btn-primary" onclick="window.app.openNewBookingModal()">
-            <span>+</span> <span>New Booking</span>
-          </button>
-
-          <button class="btn-secondary" onclick="window.app.logoutUser()" title="Log out">
-            <span>🚪</span> <span>Exit</span>
+          <button class="icon-btn" onclick="window.app.toggleTheme()" title="Toggle Theme">🌙</button>
+          <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="window.app.logout()">
+            Sign Out
           </button>
         </div>
       </header>
 
-      <!-- KPI Status Bar -->
-      <section class="kpi-bar">
-        <div class="kpi-metrics-group">
-          <div class="kpi-stat-item">
-            <div class="kpi-icon-pill bookings">📅</div>
-            <div class="kpi-stat-details">
-              <span class="kpi-stat-value" id="kpiBookingsCount">0 Slots</span>
-              <span class="kpi-stat-label">Today's Bookings</span>
+      <!-- Customer Main Scrollable Workspace -->
+      <div class="customer-body-scroll">
+        <!-- TAB 1: Explore & Book a Slot -->
+        <div id="customerTabExplore">
+          <!-- Hero Search Banner -->
+          <div class="customer-hero">
+            <div>
+              <h2 style="font-size: 22px; font-weight: 800; letter-spacing: -0.01em;">Find & Book Verified Appointments</h2>
+              <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Choose from premier salons, healthcare clinics, fitness coaches, and specialists. Reserve your time slot or join live waitlists.</p>
+            </div>
+
+            <!-- Main Live Search Bar -->
+            <div class="hero-main-search">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-subtle);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="text" class="hero-search-input" id="custSearchInput" placeholder="Search service name (e.g. Haircut, Facial, Dental Checkup, Personal Training...)" oninput="window.app.filterCustomerServices()">
+            </div>
+
+            <!-- Category Pills -->
+            <div class="category-chips-row" id="custCategoryPills">
+              <!-- Populated dynamically by app.js -->
             </div>
           </div>
-          <div class="kpi-stat-item">
-            <div class="kpi-icon-pill waitlist">⏳</div>
-            <div class="kpi-stat-details">
-              <span class="kpi-stat-value" id="kpiWaitlistCount">0 Waiting</span>
-              <span class="kpi-stat-label">Live Waitlist</span>
+
+          <!-- Services & Providers Grid -->
+          <div style="margin-top: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="font-size: 17px; font-weight: 700;" id="marketplaceGridTitle">Available Businesses & Services</h3>
+              <span style="font-size: 12px; color: var(--text-muted);" id="marketplaceCountLabel">Showing all providers</span>
             </div>
-          </div>
-          <div class="kpi-stat-item">
-            <div class="kpi-icon-pill capacity">⚡</div>
-            <div class="kpi-stat-details">
-              <span class="kpi-stat-value" id="kpiCapacityPercent">0% Full</span>
-              <span class="kpi-stat-label">Staff Capacity</span>
-            </div>
-          </div>
-          <div class="kpi-stat-item">
-            <div class="kpi-icon-pill revenue">💎</div>
-            <div class="kpi-stat-details">
-              <span class="kpi-stat-value" id="kpiRevenueTotal">$0</span>
-              <span class="kpi-stat-label">Est. Revenue</span>
+
+            <div class="providers-marketplace-grid" id="providersMarketplaceMount">
+              <!-- Populated dynamically by app.js -->
             </div>
           </div>
         </div>
 
-        <div class="kpi-right-actions">
-          <button class="toggle-waitlist-btn active" id="toggleWaitlistBtn">
-            <span>⏳</span> <span>Waitlist Drawer</span>
-          </button>
-        </div>
-      </section>
-
-      <!-- Calendar Split Workspace -->
-      <div class="calendar-workspace-split">
-        <div class="calendar-main-view" id="calendarMount">
-          <!-- Mounted by calendarController -->
-        </div>
-
-        <!-- Waitlist Side Panel -->
-        <aside class="waitlist-panel" id="waitlistPanel">
-          <div class="waitlist-panel-header">
-            <div class="waitlist-title-wrap">
-              <h2 class="waitlist-title">Waitlist Queue</h2>
-              <span class="waitlist-count-badge" id="waitlistHeaderCount">0 In Queue</span>
+        <!-- TAB 2: My Bookings & Waitlist Standby -->
+        <div id="customerTabBookings" style="display: none;">
+          <div style="display: flex; flex-direction: column; gap: 24px;">
+            <div>
+              <h2 style="font-size: 20px; font-weight: 800;">My Appointments & Standby Queue</h2>
+              <p style="font-size: 13px; color: var(--text-muted);">View upcoming confirmed slots, check your live waitlist status, and review completed appointments.</p>
             </div>
-            <div class="waitlist-header-actions">
-              <button class="icon-btn" id="closeWaitlistBtn" title="Close Panel">✕</button>
+
+            <!-- Upcoming Bookings List -->
+            <div>
+              <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span>📅 Confirmed Upcoming Bookings</span>
+              </h3>
+              <div id="custUpcomingBookingsMount" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Active Standby Waitlist Queue -->
+            <div>
+              <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span>⏳ Active Standby Waitlists</span>
+              </h3>
+              <div id="custWaitlistMount" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Completed Bookings (Reviewable) -->
+            <div>
+              <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span>✅ Completed Appointments (Leave a Review)</span>
+              </h3>
+              <div id="custCompletedBookingsMount" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+                <!-- Populated dynamically -->
+              </div>
             </div>
           </div>
-
-          <div class="waitlist-controls-wrap">
-            <input type="text" class="waitlist-search-input" id="waitlistSearchInput" placeholder="Filter waitlist...">
-            <div class="waitlist-filter-tabs">
-              <button class="waitlist-tab-btn active" data-filter="all">All</button>
-              <button class="waitlist-tab-btn" data-filter="urgent">Urgent</button>
-              <button class="waitlist-tab-btn" data-filter="vip">VIP</button>
-              <button class="waitlist-tab-btn" data-filter="flexible">Flexible</button>
-              <button class="waitlist-tab-btn" data-filter="today">Today</button>
-              <button class="waitlist-tab-btn" data-filter="notified">Notified</button>
-            </div>
-          </div>
-
-          <div class="waitlist-cards-list" id="waitlistCardsMount">
-            <!-- Mounted by waitlistController -->
-          </div>
-
-          <div class="waitlist-panel-footer">
-            <button class="btn-add-waitlist-full" onclick="window.app.openAddWaitlistModal()">
-              <span>＋</span> <span>Add Client to Waitlist</span>
-            </button>
-          </div>
-        </aside>
-      </div>
-    </main>
-  </div>
-
-
-  <!-- ========================================================
-       4. ADMIN PORTAL (PLATFORM OVERVIEW & OVERSIGHT)
-       ======================================================== -->
-  <div class="customer-portal" id="adminPortal" style="display: none;">
-    <header class="customer-top-nav">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <div class="brand-logo-icon" style="width: 32px; height: 32px; font-size: 16px; background: linear-gradient(135deg, #10B981, #059669);">🛡️</div>
-        <div style="font-weight: 800; font-size: 16px;">BookNGo Administrator Portal</div>
-      </div>
-
-      <button class="btn-secondary" style="font-size: 11px; padding: 6px 12px;" onclick="window.app.logoutUser()">
-        🚪 Switch Role / Log Out
-      </button>
-    </header>
-
-    <div style="padding: 28px; max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 24px;">
-      <!-- Stats Row -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
-        <div style="background: var(--bg-surface); padding: 18px; border-radius: var(--radius-lg); border: 1px solid var(--border-light);">
-          <div style="font-size: 12px; color: var(--text-muted);">Registered Businesses</div>
-          <div style="font-size: 24px; font-weight: 800; margin-top: 4px;" id="adminStatProviders">11</div>
-        </div>
-        <div style="background: var(--bg-surface); padding: 18px; border-radius: var(--radius-lg); border: 1px solid var(--border-light);">
-          <div style="font-size: 12px; color: var(--text-muted);">Active Customers</div>
-          <div style="font-size: 24px; font-weight: 800; margin-top: 4px;" id="adminStatCustomers">8</div>
-        </div>
-        <div style="background: var(--bg-surface); padding: 18px; border-radius: var(--radius-lg); border: 1px solid var(--border-light);">
-          <div style="font-size: 12px; color: var(--text-muted);">Total Appointments</div>
-          <div style="font-size: 24px; font-weight: 800; margin-top: 4px;" id="adminStatBookings">14</div>
-        </div>
-        <div style="background: var(--bg-surface); padding: 18px; border-radius: var(--radius-lg); border: 1px solid var(--border-light);">
-          <div style="font-size: 12px; color: var(--text-muted);">Platform Reviews</div>
-          <div style="font-size: 24px; font-weight: 800; margin-top: 4px;" id="adminStatReviews">3</div>
-        </div>
-      </div>
-
-      <!-- Business Directory Management Table -->
-      <div style="background: var(--bg-surface); padding: 20px; border-radius: var(--radius-xl); border: 1px solid var(--border-light);">
-        <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 14px;">Registered Business Providers</h3>
-        <div id="adminProvidersTableMount" style="display: flex; flex-direction: column; gap: 8px;">
-          <!-- Populated by app.js -->
         </div>
       </div>
     </div>
@@ -427,85 +230,422 @@
 
 
   <!-- ========================================================
-       5. CORE INTERACTIVE MODALS
+       PORTAL 3: PROVIDER PORTAL (SCHEDULO CALENDAR & WAITLIST)
+       ======================================================== -->
+  <div class="portal-view" id="providerPortal">
+    <div class="app-layout">
+      <!-- Left Sidebar -->
+      <aside class="sidebar" id="sidebar">
+        <!-- Sidebar Brand Header -->
+        <div class="sidebar-header">
+          <a href="#" class="brand-badge-container">
+            <div class="brand-logo-icon">B</div>
+            <div class="brand-titles">
+              <span class="brand-title">BookNGo <span class="pro-chip">PROVIDER</span></span>
+              <span class="brand-subtitle">Calendar & Waitlist</span>
+            </div>
+          </a>
+          <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Toggle Sidebar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+        </div>
+
+        <!-- Active Provider Account -->
+        <div class="provider-selector-wrap">
+          <button class="provider-dropdown-trigger" onclick="window.app.openModal('providerModal')" title="Switch or Manage Provider Account">
+            <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=120&q=80" id="activeProviderImg" class="provider-avatar-mini" alt="Provider">
+            <div class="provider-info-mini">
+              <div class="provider-name-mini" id="activeProviderName">Aurora Glow Salon & Spa</div>
+              <div class="provider-cat-mini" id="activeProviderCategory">Salons & Spas</div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+        </div>
+
+        <!-- Navigation Menu -->
+        <nav class="sidebar-nav">
+          <span class="nav-section-label">Scheduling</span>
+          <a href="#" class="nav-item active" onclick="window.store.setView('timeline')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+            <span class="nav-label">Calendar Timeline</span>
+          </a>
+          <a href="#" class="nav-item" onclick="window.store.setView('waitlist-board')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span class="nav-label">Waitlist Queue</span>
+            <span class="nav-badge urgent" id="sidebarWaitlistBadge">6 Live</span>
+          </a>
+          <a href="#" class="nav-item" onclick="window.app.openCommandPalette()">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <span class="nav-label">Quick Search</span>
+            <span class="nav-badge">⌘K</span>
+          </a>
+
+          <span class="nav-section-label" style="margin-top: 14px;">Business Settings</span>
+          <a href="#" class="nav-item" onclick="window.app.openModal('providerModal')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span class="nav-label">Specialists & Staff</span>
+          </a>
+          <a href="#" class="nav-item" onclick="window.app.openModal('providerModal')">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/></svg>
+            <span class="nav-label">Service Catalog</span>
+          </a>
+        </nav>
+
+        <!-- Sidebar Bottom Footer -->
+        <div class="sidebar-footer">
+          <div class="profile-card" onclick="window.app.openModal('providerModal')" style="cursor: pointer;">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" class="profile-avatar" alt="Provider User">
+            <div class="profile-text">
+              <div class="profile-name" id="sidebarUserName">Business Owner</div>
+              <div class="profile-role">Provider Account</div>
+            </div>
+          </div>
+          <button class="icon-btn" onclick="window.app.logout()" title="Sign Out">🚪</button>
+        </div>
+      </aside>
+
+      <!-- Main Workspace -->
+      <main class="main-workspace">
+        <header class="top-header">
+          <!-- Date Navigator -->
+          <div class="date-nav-group">
+            <button class="btn-today" id="btnToday">Today</button>
+            <button class="nav-arrow-btn" id="btnPrevDate" title="Previous Day">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <button class="nav-arrow-btn" id="btnNextDate" title="Next Day">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
+            <div class="current-date-title">
+              <span id="currentDateText">Loading...</span>
+              <span class="current-date-sub" id="currentDateSub">Today</span>
+            </div>
+          </div>
+
+          <!-- Search Bar -->
+          <div class="global-search-wrap">
+            <svg class="search-icon-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" class="search-input" placeholder="Search appointments, staff, waitlist..." onclick="window.app.openCommandPalette()" readonly>
+            <span class="search-kbd-shortcut">⌘K</span>
+          </div>
+
+          <!-- Header Right Actions -->
+          <div class="header-right-actions">
+            <!-- View Switcher -->
+            <div class="view-switcher">
+              <button class="view-btn active" data-view="timeline">Timeline</button>
+              <button class="view-btn" data-view="week">Week</button>
+              <button class="view-btn" data-view="waitlist-board">Waitlist Board</button>
+            </div>
+
+            <button class="btn-secondary btn-waitlist-action" onclick="window.app.openAddWaitlistModal()">
+              <span>⏳</span> <span>+ Waitlist</span>
+            </button>
+            <button class="btn-primary" onclick="window.app.openNewBookingModal()">
+              <span>+</span> <span>New Booking</span>
+            </button>
+            <button class="icon-btn" onclick="window.app.toggleTheme()" title="Toggle Theme">🌙</button>
+            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="window.app.logout()">
+              Sign Out
+            </button>
+          </div>
+        </header>
+
+        <!-- KPI Status Bar -->
+        <section class="kpi-bar">
+          <div class="kpi-metrics-group">
+            <div class="kpi-stat-item">
+              <div class="kpi-icon-pill bookings">📅</div>
+              <div class="kpi-stat-details">
+                <span class="kpi-stat-value" id="kpiBookingsCount">0 Slots</span>
+                <span class="kpi-stat-label">Today's Bookings</span>
+              </div>
+            </div>
+            <div class="kpi-stat-item">
+              <div class="kpi-icon-pill waitlist">⏳</div>
+              <div class="kpi-stat-details">
+                <span class="kpi-stat-value" id="kpiWaitlistCount">0 Waiting</span>
+                <span class="kpi-stat-label">Live Standby Queue</span>
+              </div>
+            </div>
+            <div class="kpi-stat-item">
+              <div class="kpi-icon-pill capacity">⚡</div>
+              <div class="kpi-stat-details">
+                <span class="kpi-stat-value" id="kpiCapacityPercent">0% Full</span>
+                <span class="kpi-stat-label">Staff Load</span>
+              </div>
+            </div>
+            <div class="kpi-stat-item">
+              <div class="kpi-icon-pill revenue">💎</div>
+              <div class="kpi-stat-details">
+                <span class="kpi-stat-value" id="kpiRevenueTotal">$0</span>
+                <span class="kpi-stat-label">Est. Revenue</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-right-actions">
+            <button class="toggle-waitlist-btn active" id="toggleWaitlistBtn">
+              <span>⏳</span> <span>Waitlist Drawer</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Calendar & Waitlist Split View -->
+        <div class="calendar-workspace-split">
+          <div class="calendar-main-view" id="calendarMount">
+            <!-- Calendar Controller mounts timeline here -->
+          </div>
+
+          <!-- Schedulo Waitlist Panel -->
+          <aside class="waitlist-panel" id="waitlistPanel">
+            <div class="waitlist-panel-header">
+              <div class="waitlist-title-wrap">
+                <h2 class="waitlist-title">Waitlist Queue</h2>
+                <span class="waitlist-count-badge" id="waitlistHeaderCount">6 In Queue</span>
+              </div>
+              <button class="icon-btn" id="closeWaitlistBtn">✕</button>
+            </div>
+
+            <div class="waitlist-controls-wrap">
+              <input type="text" class="waitlist-search-input" id="waitlistSearchInput" placeholder="Filter waitlist...">
+              <div class="waitlist-filter-tabs">
+                <button class="waitlist-tab-btn active" data-filter="all">All</button>
+                <button class="waitlist-tab-btn" data-filter="urgent">Urgent</button>
+                <button class="waitlist-tab-btn" data-filter="vip">VIP</button>
+                <button class="waitlist-tab-btn" data-filter="flexible">Flexible</button>
+                <button class="waitlist-tab-btn" data-filter="today">Today</button>
+                <button class="waitlist-tab-btn" data-filter="notified">Notified</button>
+              </div>
+            </div>
+
+            <div class="waitlist-cards-list" id="waitlistCardsMount">
+              <!-- Waitlist Controller mounts cards here -->
+            </div>
+
+            <div class="waitlist-panel-footer">
+              <button class="btn-add-waitlist-full" onclick="window.app.openAddWaitlistModal()">
+                <span>＋</span> <span>Add Client to Waitlist</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       PORTAL 4: ADMIN PORTAL (PLATFORM OVERSIGHT & APPROVALS)
+       ======================================================== -->
+  <div class="portal-view" id="adminPortal">
+    <div class="admin-layout">
+      <!-- Admin Header -->
+      <header class="admin-header">
+        <div class="brand-badge-container">
+          <div class="brand-logo-icon" style="background: linear-gradient(135deg, #10B981, #059669);">🛡️</div>
+          <div class="brand-titles">
+            <span class="brand-title">BookNGo <span class="pro-chip" style="background: #ECFDF5; color: #059669;">ADMIN</span></span>
+            <span class="brand-subtitle">Platform Management</span>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <button class="icon-btn" onclick="window.app.toggleTheme()" title="Toggle Theme">🌙</button>
+          <button class="btn-secondary" onclick="window.app.logout()">Sign Out</button>
+        </div>
+      </header>
+
+      <!-- Admin Body -->
+      <div class="admin-body-scroll">
+        <!-- Platform KPI Cards -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 20px; border-radius: var(--radius-lg);">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Businesses</div>
+            <div style="font-size: 24px; font-weight: 800; color: var(--text-main); margin-top: 4px;" id="adminTotalProviders">12</div>
+          </div>
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 20px; border-radius: var(--radius-lg);">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Customers</div>
+            <div style="font-size: 24px; font-weight: 800; color: var(--text-main); margin-top: 4px;" id="adminTotalCustomers">8</div>
+          </div>
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 20px; border-radius: var(--radius-lg);">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Bookings</div>
+            <div style="font-size: 24px; font-weight: 800; color: var(--text-main); margin-top: 4px;" id="adminTotalBookings">18</div>
+          </div>
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 20px; border-radius: var(--radius-lg);">
+            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Waitlist Requests</div>
+            <div style="font-size: 24px; font-weight: 800; color: var(--urgent-solid); margin-top: 4px;" id="adminTotalWaitlist">6</div>
+          </div>
+        </div>
+
+        <!-- Provider Verification List -->
+        <div>
+          <h3 style="font-size: 17px; font-weight: 700; margin-bottom: 12px;">🏢 Registered Business Verification</h3>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Business Name</th>
+                <th>Category</th>
+                <th>Location</th>
+                <th>Contact Email</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="adminProvidersTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Dispute & Customer Issue Reports -->
+        <div>
+          <h3 style="font-size: 17px; font-weight: 700; margin-bottom: 12px;">⚠️ Customer Reports & Disputes</h3>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Booking ID</th>
+                <th>Provider</th>
+                <th>Customer</th>
+                <th>Issue Details</th>
+                <th>Status</th>
+                <th>Resolution</th>
+              </tr>
+            </thead>
+            <tbody id="adminReportsTableBody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================
+       5. INTERACTIVE MODALS & DRAWERS
        ======================================================== -->
 
-  <!-- CUSTOMER "BOOK A SLOT" MODAL -->
-  <div class="modal-backdrop" id="customerBookSlotModal">
-    <div class="modal-container" style="max-width: 500px;">
+  <!-- Customer Interactive Slot Booking Modal -->
+  <div class="modal-backdrop" id="customerSlotModal">
+    <div class="modal-container" style="max-width: 560px;">
       <div class="modal-header">
         <div>
-          <h3 class="modal-title" id="custBookModalTitle">Book an Appointment Slot</h3>
-          <p style="font-size: 12px; color: var(--text-muted);" id="custBookModalProviderName">Selected Provider</p>
+          <h3 class="modal-title" id="slotModalProviderName">Book an Appointment Slot</h3>
+          <p style="font-size: 12px; color: var(--text-muted);" id="slotModalProviderLocation">Downtown Center</p>
         </div>
-        <button class="modal-close-btn" onclick="window.app.closeModal('customerBookSlotModal')">✕</button>
+        <button class="modal-close-btn" onclick="window.app.closeModal('customerSlotModal')">✕</button>
       </div>
       <form onsubmit="window.app.submitCustomerSlotBooking(event)">
         <div class="modal-body">
-          <input type="hidden" id="custBookProviderId">
-
-          <!-- 1. Service Selection -->
+          <!-- Step 1: Select Service -->
           <div class="form-group">
-            <label class="form-label">Select Service</label>
-            <select id="custBookServiceSelect" class="form-select" required onchange="window.app.handleCustomerServiceChange()">
-              <!-- Populated dynamically -->
-            </select>
+            <label class="form-label">1. Select Service</label>
+            <select id="custSlotServiceSelect" class="form-select" onchange="window.app.onSlotServiceOrDateChange()" required></select>
           </div>
 
-          <!-- 2. Specialist Selection -->
+          <!-- Step 2: Select Specialist -->
           <div class="form-group">
-            <label class="form-label">Preferred Specialist</label>
-            <select id="custBookWorkerSelect" class="form-select" onchange="window.app.generateAvailableCustomerSlots()">
-              <!-- Populated dynamically -->
-            </select>
+            <label class="form-label">2. Specialist</label>
+            <select id="custSlotWorkerSelect" class="form-select" onchange="window.app.onSlotServiceOrDateChange()"></select>
           </div>
 
-          <!-- 3. Target Date -->
+          <!-- Step 3: Select Date -->
           <div class="form-group">
-            <label class="form-label">Appointment Date</label>
-            <input type="date" id="custBookDateInput" class="form-input" required onchange="window.app.generateAvailableCustomerSlots()">
+            <label class="form-label">3. Select Date</label>
+            <input type="date" id="custSlotDateInput" class="form-input" onchange="window.app.onSlotServiceOrDateChange()" required>
           </div>
 
-          <!-- 4. LIVE AVAILABLE TIME SLOTS MATRIX -->
-          <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <label class="form-label">Choose Available Time Slot</label>
-              <span style="font-size: 11px; color: var(--success-solid); font-weight: 600;">⚡ Instant Confirmation</span>
+          <!-- Step 4: Available Slot Badges -->
+          <div>
+            <label class="form-label" style="margin-bottom: 8px; display: block;">4. Pick Available Time Slot</label>
+            <div id="custAvailableSlotsMount">
+              <!-- Populated dynamically with open slot badges -->
             </div>
-            <div class="slot-picker-grid" id="custAvailableSlotsGrid">
-              <!-- Populated by app.js with clickable slot pills -->
-            </div>
-            <input type="hidden" id="custSelectedTimeSlot" required>
+            <input type="hidden" id="custSelectedTimeInput" required>
           </div>
 
-          <!-- 5. Standby Waitlist Option if desired -->
-          <div style="background: var(--warning-bg); border: 1px solid var(--warning-border); padding: 10px 12px; border-radius: var(--radius-sm); font-size: 11px; color: var(--warning-text); display: flex; align-items: center; justify-content: space-between;">
-            <span>Preferred slot occupied or busy?</span>
-            <button type="button" class="quick-demo-pill" style="color: var(--warning-text); border-color: var(--warning-border);" onclick="window.app.convertBookingToWaitlist()">
-              ⏳ Join Waitlist Queue
-            </button>
-          </div>
-
-          <!-- 6. Special Requests / Notes -->
+          <!-- Notes -->
           <div class="form-group">
-            <label class="form-label">Notes or Requests (Optional)</label>
-            <textarea id="custBookNotesInput" class="form-textarea" rows="2" placeholder="Tell the specialist about any requirements..."></textarea>
+            <label class="form-label">Special Requests or Notes (Optional)</label>
+            <textarea id="custSlotNotesInput" class="form-textarea" rows="2" placeholder="Any preferences for the specialist..."></textarea>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="window.app.closeModal('customerBookSlotModal')">Cancel</button>
-          <button type="submit" class="btn-primary" id="custConfirmBookingBtn">Confirm & Book Slot</button>
+        <div class="modal-footer" style="justify-content: space-between;">
+          <button type="button" class="btn-secondary" style="background: var(--warning-bg); border-color: var(--warning-border); color: var(--warning-text);" onclick="window.app.openCustomerStandbyWaitlistModal()">
+            ⏳ Slot Full? Join Waitlist
+          </button>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-secondary" onclick="window.app.closeModal('customerSlotModal')">Cancel</button>
+            <button type="submit" class="btn-primary" id="custConfirmBookingBtn" disabled>Confirm Booking</button>
+          </div>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- CUSTOMER "WRITE A REVIEW" MODAL -->
-  <div class="modal-backdrop" id="customerReviewModal">
-    <div class="modal-container" style="max-width: 440px;">
+  <!-- Customer Join Standby Waitlist Modal -->
+  <div class="modal-backdrop" id="customerWaitlistModal">
+    <div class="modal-container">
       <div class="modal-header">
-        <h3 class="modal-title">Write a Review</h3>
-        <button class="modal-close-btn" onclick="window.app.closeModal('customerReviewModal')">✕</button>
+        <h3 class="modal-title">Join Live Standby Waitlist</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('customerWaitlistModal')">✕</button>
+      </div>
+      <form onsubmit="window.app.submitCustomerWaitlist(event)">
+        <div class="modal-body">
+          <p style="font-size: 13px; color: var(--text-muted);">
+            If a client cancels or an open slot opens up, you'll be automatically notified via SMS to claim the slot within 15 minutes!
+          </p>
+          <div class="form-group">
+            <label class="form-label">Service</label>
+            <select id="cwServiceSelect" class="form-select" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Specialist Preference</label>
+            <select id="cwWorkerSelect" class="form-select"></select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Desired Date</label>
+              <input type="date" id="cwDateInput" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Preferred Time Window</label>
+              <select id="cwTimeWindowSelect" class="form-select">
+                <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
+                <option value="Afternoon (12:00 - 16:00)">Afternoon (12:00 - 16:00)</option>
+                <option value="Evening (16:00 - 19:00)">Evening (16:00 - 19:00)</option>
+                <option value="Any Time Today">Any Time Today</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Flexibility & Notice</label>
+            <select id="cwPrioritySelect" class="form-select">
+              <option value="urgent">Urgent — Ready on 15 mins notice</option>
+              <option value="flexible">Flexible Window</option>
+              <option value="normal">Standard Request</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea id="cwNotesInput" class="form-textarea" rows="2" placeholder="e.g. Willing to take cancellation today..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="window.app.closeModal('customerWaitlistModal')">Cancel</button>
+          <button type="submit" class="btn-primary">Join Standby Queue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Leave a Review Modal -->
+  <div class="modal-backdrop" id="leaveReviewModal">
+    <div class="modal-container" style="max-width: 460px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Review & Feedback</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('leaveReviewModal')">✕</button>
       </div>
       <form onsubmit="window.app.submitCustomerReview(event)">
         <div class="modal-body">
@@ -513,34 +653,95 @@
           <input type="hidden" id="revProviderId">
 
           <div>
-            <div style="font-weight: 700; font-size: 14px;" id="revProviderName">Provider Name</div>
-            <div style="font-size: 12px; color: var(--text-muted);" id="revServiceName">Service Name</div>
+            <div style="font-weight: 700; font-size: 14px;" id="revProviderTitle">Aurora Glow Salon</div>
+            <div style="font-size: 12px; color: var(--text-muted);" id="revServiceTitle">Precision Haircut</div>
           </div>
 
-          <!-- Star Rating Picker -->
           <div class="form-group" style="align-items: center; text-align: center; margin: 10px 0;">
             <label class="form-label">Your Rating</label>
-            <div class="star-rating-widget" id="starRatingWidget">
-              <span data-value="1" onclick="window.app.selectReviewRating(1)">⭐</span>
-              <span data-value="2" onclick="window.app.selectReviewRating(2)">⭐</span>
-              <span data-value="3" onclick="window.app.selectReviewRating(3)">⭐</span>
-              <span data-value="4" onclick="window.app.selectReviewRating(4)">⭐</span>
-              <span data-value="5" onclick="window.app.selectReviewRating(5)">⭐</span>
+            <div class="star-rating-row" id="starRatingRow">
+              <span class="star-rating-item active" data-rating="1" onclick="window.app.setReviewRating(1)">★</span>
+              <span class="star-rating-item active" data-rating="2" onclick="window.app.setReviewRating(2)">★</span>
+              <span class="star-rating-item active" data-rating="3" onclick="window.app.setReviewRating(3)">★</span>
+              <span class="star-rating-item active" data-rating="4" onclick="window.app.setReviewRating(4)">★</span>
+              <span class="star-rating-item active" data-rating="5" onclick="window.app.setReviewRating(5)">★</span>
             </div>
-            <input type="hidden" id="revRatingValue" value="5">
+            <input type="hidden" id="revRatingInput" value="5">
           </div>
 
-          <!-- Review Comment -->
           <div class="form-group">
-            <label class="form-label">Your Experience Feedback</label>
-            <textarea id="revCommentInput" class="form-textarea" rows="3" placeholder="How was the service? Would you recommend to others?" required></textarea>
+            <label class="form-label">Write your experience</label>
+            <textarea id="revCommentInput" class="form-textarea" rows="3" placeholder="How was the service? What did you like?" required></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="window.app.closeModal('customerReviewModal')">Cancel</button>
+          <button type="button" class="btn-secondary" onclick="window.app.closeModal('leaveReviewModal')">Cancel</button>
           <button type="submit" class="btn-primary">Submit Review</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Provider Business Account Switcher & Login Modal -->
+  <div class="modal-backdrop" id="providerModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title">Provider Business Account</h3>
+        <button class="modal-close-btn" onclick="window.app.closeModal('providerModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">
+          Log into your verified business account or register a new business to manage appointments, staff schedules, and waitlists.
+        </p>
+
+        <form onsubmit="event.preventDefault(); window.store.loginAsProvider(document.getElementById('providerLoginEmail').value); window.app.closeModal('providerModal'); window.app.showToast('Logged in as provider!', 'success');">
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label class="form-label">Provider Business Email</label>
+            <input type="email" id="providerLoginEmail" class="form-input" placeholder="e.g. aurora@salon.com" required value="aurora@salon.com">
+          </div>
+          <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
+            Log In as Provider
+          </button>
+        </form>
+
+        <div style="text-align: center; font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; margin: 16px 0 10px;">
+          — Or Register a New Business —
+        </div>
+
+        <form onsubmit="event.preventDefault(); window.store.registerProviderBusiness({ name: document.getElementById('newBizName').value, category: document.getElementById('newBizCat').value, email: document.getElementById('newBizEmail').value }); window.app.closeModal('providerModal'); window.app.showToast('Registered & loaded your business!', 'success');">
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label class="form-label">Business / Shop Name</label>
+            <input type="text" id="newBizName" class="form-input" placeholder="e.g. Luxe Studio & Wellness" required>
+          </div>
+          <div class="form-row" style="margin-bottom: 10px;">
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <select id="newBizCat" class="form-select">
+                <option value="Salons & Spas">Salons & Spas</option>
+                <option value="Beauty & Wellness">Beauty & Wellness</option>
+                <option value="Healthcare & Clinics">Healthcare & Clinics</option>
+                <option value="Fitness & Sports">Fitness & Sports</option>
+                <option value="Education & Tutoring">Education & Tutoring</option>
+                <option value="Home Services & Repairs">Home Services & Repairs</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Contact Email</label>
+              <input type="email" id="newBizEmail" class="form-input" placeholder="contact@mybiz.com" required>
+            </div>
+          </div>
+          <button type="submit" class="btn-secondary" style="width: 100%; justify-content: center; background: var(--bg-surface-alt);">
+            ＋ Register & Open Business Dashboard
+          </button>
+        </form>
+
+        <div style="text-align: center; font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; margin: 16px 0 10px;">
+          — Existing Accounts —
+        </div>
+        <div id="providerSelectList" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
+          <!-- Populated by app.js -->
+        </div>
+      </div>
     </div>
   </div>
 
@@ -592,14 +793,14 @@
   <div class="modal-backdrop" id="addWaitlistModal">
     <div class="modal-container">
       <div class="modal-header">
-        <h3 class="modal-title">Add Client to Waitlist</h3>
+        <h3 class="modal-title">Add Client to Standby Queue</h3>
         <button class="modal-close-btn" onclick="window.app.closeModal('addWaitlistModal')">✕</button>
       </div>
       <form onsubmit="window.app.submitAddWaitlist(event)">
         <div class="modal-body">
           <div class="form-group">
             <label class="form-label">Client Full Name</label>
-            <input type="text" id="wlNameInput" class="form-input" placeholder="e.g. Jessica Alba" required>
+            <input type="text" id="wlNameInput" class="form-input" placeholder="e.g. Rachel Green" required>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -700,10 +901,10 @@
     </div>
   </div>
 
-  <!-- Global Toast Notification Stack -->
+  <!-- Toast Notification Stack -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- Core Scripts -->
+  <!-- Scripts -->
   <script src="js/data.js"></script>
   <script src="js/store.js"></script>
   <script src="js/calendar.js"></script>

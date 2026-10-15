@@ -1,46 +1,56 @@
 # BookNGo — Multi-Role Appointment Booking & Waitlist Platform
 
-> **Live Schedulo-Inspired Appointment Architecture**: High-velocity calendar booking with real-time waitlist queue management, customer service searching, live slot booking, verified review writing, and multi-role authentication.
+> **Complete Schedulo-Inspired Booking Architecture**: Multi-portal platform featuring a **Role Selection Gateway (Customer / Provider / Admin)**, Gmail/Email authentication, interactive **Service Search & Time Slot Booking**, **Review & Rating System**, **Live Standby Waitlists**, and the **Schedulo Multi-Specialist Calendar Matrix**.
+
+Inspired by [Schedulo — Waitlist View in Calendar Appointment Booking App by Bagus Fikri (Dribbble)](https://dribbble.com/shots/27287944-Schedulo-Waitlist-View-in-Calendar-Appointment-Booking-App).
 
 ---
 
-## 🌟 Key Highlights & User Workflows
+## 🚀 Portals & Roles
 
-### 1. 🚪 Role Selection & Auth Gateway (Landing View)
-- When opening the application, users are greeted with a clean **Role Selection Screen**:
-  - 👤 **Customer**: Search services, book available time slots, track appointments & write reviews.
-  - 🏢 **Business Provider**: Access the Schedulo timeline calendar, live waitlist queue & specialist workload.
-  - 🛡️ **Administrator**: Platform overview, verify businesses, audit logs & dispute reviews.
-- **Gmail / Password Authentication**: Sign in or register as any role with email and password.
-- **1-Click Demo Logins**: Fast testing shortcuts for immediate evaluation of each role.
-- **Instant Role Switching**: Any user can click `Switch Role / Log Out` at any time to test different roles seamlessly.
+### 1. 🚪 Role Selection Gateway & Authentication
+- **Role Cards**: Choose your portal upon arrival:
+  - 👤 **Customer**: Search verified services, reserve open time slots, join standby queues, and write reviews.
+  - 🏢 **Provider / Business**: Manage appointment calendar, specialist staff, live waitlists, and client notifications.
+  - 🛡️ **Platform Admin**: Verify new business registrations, review customer dispute reports, and monitor platform metrics.
+- **Gmail / Email & Password Login**: Clean Sign In and Create Account forms with validation.
+- **⚡ 1-Click Demo Profiles**: Quick buttons to test Customer (`alex@demo.com`), Provider (`aurora@salon.com`), or Admin (`admin@bookngo.com`) with zero typing needed.
 
-### 2. 👤 Customer Portal: Search, Slot Booking & Reviews
-- **🔍 Service Discovery**: Search by keyword ("haircut", "facial", "dentist", "trainer") or filter by category pills (*Beauty, Salons, Healthcare, Fitness, Education, Home Repairs*).
-- **📅 "Book a Slot" Matrix (Core Feature)**:
-  - Select service, specialist, and target date.
-  - Generates live available 30/45-minute slot pills (e.g. `09:30 AM`, `11:15 AM`, `02:30 PM`) avoiding conflicts with booked appointments.
-  - One-click slot selection with instant confirmation ticket!
-  - Integrated **"⏳ Join Standby Waitlist"** if direct slots are filled.
-- **📋 My Bookings**:
-  - Track upcoming appointments and cancel anytime to free up the slot.
-  - Completed bookings feature a prominent **"⭐ Leave a Review"** button.
-- **⭐ Verified Reviewing System**:
-  - 1 to 5 star rating widget with feedback comments.
-  - Submitting a review recalculates the provider's overall score in real time and appears in the customer's "My Reviews" tab.
+---
 
-### 3. 🏢 Provider Portal: Schedulo Calendar & Waitlist Panel
-- **Staff Column Lanes**: Specialists listed across the top with real-time capacity and appointment load.
-- **30-Min Interval Matrix**: Live red current-time bar, scheduled breaks, and interactive cards.
-- **Live Waitlist Drawer**:
-  - Standby queue with priority tags (*High Urgency, VIP, Flexible, Standard*).
-  - ⚡ **Smart Match**: Pulses open calendar slots matching the client's service duration.
-  - 📲 **SMS Simulator**: Previews notifications with a simulated customer reply.
-  - **Drag-and-Drop**: Drag waitlist cards directly onto open calendar slots.
+### 2. 👤 Customer Portal: Search Services & Book a Slot
+- **Service Discovery & Live Search**: Instant search for services (e.g. *Precision Haircut*, *Dental Scaling*, *Hydra-Facial*, *Personal Training*, *Calculus Tutoring*).
+- **Category Filters**: Filter across *Beauty & Wellness*, *Salons & Spas*, *Healthcare & Clinics*, *Fitness & Sports*, *Education & Tutoring*, *Home Services*, and *Pet Care*.
+- **Verified Business Cards**: View ratings, star reviews, address, open hours, and service prices.
+- **Interactive Slot Booking Modal**:
+  1. Select service & duration
+  2. Select specialist (or any available specialist)
+  3. Pick target date
+  4. **Available Time Slots Grid**: Click any open slot badge (e.g. `09:30`, `11:00`, `14:30`) to confirm with 1 click.
+  5. **Slot Full? Join Live Waitlist**: Standby button if slots are booked.
+- **My Appointments & Standby Queue**:
+  - Confirmed upcoming bookings with reference ID and cancellation option.
+  - Standby waitlist tickets showing live queue position (e.g. `#1 in Standby Queue`).
+  - Completed appointments with **"⭐ Write Review"** button.
+- **Review & Feedback System**: Rate specialists with 1–5 stars and submit customer reviews directly attached to the provider's profile.
 
-### 4. 🛡️ Admin Portal: Platform Oversight
-- Platform KPI cards (Registered Businesses, Customers, Total Appointments, Platform Reviews).
-- Business directory table with 1-click status toggles (*Active, Suspended, Pending*).
+---
+
+### 3. 🏢 Provider Portal: Schedulo Calendar & Waitlist Matrix
+- **Staff Column Lanes**: Real-time specialist columns with workload percentage pills.
+- **Micro-Interval Grid**: 30-minute interval slots from 08:00 to 19:00 with responsive duration sizing.
+- **Live Time Indicator**: Dynamic glowing red indicator bar with live minute-by-minute position tracking.
+- **Drag-and-Drop Slotting**: Pick up any waitlist ticket and drop it onto an open calendar slot to confirm.
+- **⚡ Smart Match Engine**: 1-click scanner highlighting open slots in pulsating indigo that match waitlist durations.
+- **📲 Simulated SMS Notification**: Realistic smartphone preview with a live 15-minute claim window and "Simulate Customer Replying YES" button.
+- **Provider Account Login & Business Setup**: Log in with business email or register a custom shop without arbitrary dummy data.
+
+---
+
+### 4. 🛡️ Admin Portal: Platform Oversight & Approvals
+- **Platform Analytics**: Total businesses, active bookings, registered clients, and active waitlist requests.
+- **Business Verification Table**: One-click **Approve** or **Decline** actions for pending provider registrations.
+- **Customer Dispute & Issue Reports**: Review and resolve customer dispute tickets.
 
 ---
 
@@ -48,35 +58,45 @@
 
 ```
 BookNGo/
-├── index.html            # Role Gateway, Customer Portal, Provider Schedulo Calendar & Modals
+├── index.html            # Multi-portal application (Auth, Customer, Provider, Admin)
 ├── css/
-│   ├── variables.css     # Design tokens, color scales & theme variables
-│   └── style.css         # Modern styling for role gateway, catalog, slot picker, calendar & waitlist
+│   ├── variables.css     # Design tokens, color scales & theme variables (Light/Dark)
+│   └── style.css         # Schedulo layout, marketplace cards, slot booking matrix & admin styles
 ├── js/
-│   ├── data.js           # Comprehensive seed dataset for categories, providers & customers
-│   ├── store.js          # Multi-role authentication, session management, booking & review storage
-│   ├── calendar.js       # Schedulo staff timeline grid & drag-and-drop droppable lanes
+│   ├── data.js           # Seed data for 12 categories, providers, staff, and initial bookings
+│   ├── store.js          # Multi-role authentication, reactive event store & LocalStorage persistence
+│   ├── calendar.js       # Timeline grid renderer, drag-and-drop slots & live time bar
 │   ├── waitlist.js       # Waitlist panel controller, real-time filtering & card drag handlers
-│   └── app.js            # Coordinator for auth routing, customer slot booking, and reviews
-└── README.md             # Project documentation
+│   └── app.js            # Main coordinator, slot booking engine, review system & modal controllers
+└── README.md             # Project documentation & reference details
 ```
 
 ---
 
-## 🚀 How to Run Locally
+## 🏃 Running Locally
 
-### Option 1: Python HTTP Server (Recommended)
+Run using Python 3:
+
 ```bash
 python3 -m http.server 8000
 ```
-Then open `http://localhost:8000` in your web browser.
 
-### Option 2: Direct macOS Browser Launch
+Then open in your browser:
+👉 **`http://localhost:8000`**
+
+Or on macOS directly:
 ```bash
 open index.html
 ```
 
 ---
 
+## 💡 Quick Demo Credentials
+- **Customer Role**: Email: `alex@demo.com` | Password: `password123`
+- **Provider Role**: Email: `aurora@salon.com` | Password: `password123`
+- **Admin Role**: Email: `admin@bookngo.com` | Password: `password123`
+
+---
+
 ## 📄 License
-MIT License. Crafted with excellence for **BookNGo**.
+MIT License. Crafted for **BookNGo**.
