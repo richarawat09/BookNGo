@@ -1655,3 +1655,483 @@ input:focus, select:focus, textarea:focus {
     transform: translateX(0);
   }
 }
+
+/* ========================================================
+   9. ROLE SELECTION LANDING / AUTH GATEWAY
+   ======================================================== */
+.auth-gateway-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-page);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 680px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-floating);
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.auth-header {
+  text-align: center;
+}
+
+.auth-brand-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: var(--primary-gradient);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 24px;
+  box-shadow: 0 4px 14px var(--primary-glow);
+  margin-bottom: 12px;
+}
+
+.auth-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+
+.auth-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* 3 Role Selection Cards */
+.role-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .role-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.role-card {
+  background: var(--bg-surface-alt);
+  border: 2px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 18px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  transition: all var(--transition-fast);
+}
+
+.role-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-focus);
+}
+
+.role-card.selected {
+  border-color: var(--primary-500);
+  background: var(--primary-50);
+  box-shadow: 0 0 0 1px var(--primary-500), 0 4px 12px var(--primary-glow);
+}
+
+[data-theme="dark"] .role-card.selected {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--primary-400);
+}
+
+.role-card-icon {
+  font-size: 28px;
+  margin-bottom: 2px;
+}
+
+.role-card-title {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.role-card-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* Auth Input Form */
+.auth-form-card {
+  background: var(--bg-surface-alt);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-quick-login-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+
+.quick-demo-pill {
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  font-weight: 600;
+  color: var(--primary-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.quick-demo-pill:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-400);
+}
+
+/* ========================================================
+   10. CUSTOMER PORTAL & SEARCH & SLOT BOOKING
+   ======================================================== */
+.customer-portal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--bg-page);
+}
+
+.customer-top-nav {
+  height: 64px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.cust-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cust-nav-btn {
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cust-nav-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-surface-alt);
+}
+
+.cust-nav-btn.active {
+  color: var(--primary-600);
+  background: var(--primary-50);
+}
+
+[data-theme="dark"] .cust-nav-btn.active {
+  color: var(--primary-400);
+  background: rgba(99, 102, 241, 0.15);
+}
+
+/* Customer Hero Search */
+.customer-hero-section {
+  padding: 36px 28px 24px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.cust-hero-title {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text-main);
+}
+
+.cust-hero-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  max-width: 520px;
+}
+
+.cust-search-bar {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  padding: 4px 6px 4px 18px;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
+}
+
+.cust-search-bar:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.cust-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 10px 8px;
+  font-size: 13px;
+}
+
+.cust-category-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.cat-pill-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border-light);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.cat-pill-btn:hover {
+  border-color: var(--border-focus);
+  color: var(--text-main);
+}
+
+.cat-pill-btn.active {
+  background: var(--primary-600);
+  color: #fff;
+  border-color: var(--primary-600);
+}
+
+/* Service / Provider Catalog Grid */
+.customer-catalog-section {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.providers-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+}
+
+.business-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.business-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-300);
+}
+
+.business-card-img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  position: relative;
+}
+
+.business-card-content {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.business-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.business-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.business-rating-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #D97706;
+  background: #FEF3C7;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+[data-theme="dark"] .business-rating-badge {
+  background: rgba(245, 158, 11, 0.2);
+}
+
+.business-services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 10px 0;
+}
+
+.service-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.service-item-name {
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.service-item-price {
+  font-weight: 700;
+  color: var(--primary-600);
+}
+
+[data-theme="dark"] .service-item-price {
+  color: var(--primary-400);
+}
+
+/* Time Slot Selector Pills in Booking Modal */
+.slot-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+
+@media (max-width: 480px) {
+  .slot-picker-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.slot-time-pill {
+  padding: 8px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-alt);
+  border: 1px solid var(--border-light);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-main);
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.slot-time-pill:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-400);
+  color: var(--primary-600);
+}
+
+.slot-time-pill.selected {
+  background: var(--primary-600);
+  color: #fff;
+  border-color: var(--primary-600);
+  box-shadow: 0 2px 8px var(--primary-glow);
+}
+
+/* Review Star Selector */
+.star-rating-widget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.star-rating-widget span {
+  transition: transform 0.15s ease;
+}
+
+.star-rating-widget span:hover {
+  transform: scale(1.2);
+}
+
+/* My Bookings List Card */
+.my-booking-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--shadow-xs);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  .my-booking-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
