@@ -192,12 +192,15 @@
     selectAuthRole(role) {
       this.currentAuthRole = role;
       document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+      document.querySelectorAll('.simple-role-btn').forEach(b => b.classList.remove('active'));
 
       if (role === 'customer') {
         document.getElementById('roleCardCustomer')?.classList.add('selected');
+        document.getElementById('btnRoleCustomer')?.classList.add('active');
         document.getElementById('authEmailInput').value = 'alex@demo.com';
       } else if (role === 'provider') {
         document.getElementById('roleCardProvider')?.classList.add('selected');
+        document.getElementById('btnRoleProvider')?.classList.add('active');
         document.getElementById('authEmailInput').value = 'aurora@salon.com';
       } else if (role === 'admin') {
         document.getElementById('roleCardAdmin')?.classList.add('selected');

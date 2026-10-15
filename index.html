@@ -3,63 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BookNGo — Appointment Booking & Waitlist Platform</title>
-  <meta name="description" content="Online appointment booking platform with live waitlist queue and multi-role access for customers, providers, and administrators.">
+  <title>BookNGo — Simple & Fast Appointment Booking</title>
+  <meta name="description" content="Simple, modern appointment booking platform for customers and service providers.">
   <link rel="stylesheet" href="css/variables.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
   <!-- ========================================================
-       PORTAL 1: ROLE SELECTION & AUTHENTICATION LANDING
+       PORTAL 1: CLEAN & SIMPLE ROLE SELECTION & LOGIN
        ======================================================== -->
   <div class="portal-view active" id="authPortal">
-    <div class="auth-page-wrapper">
-      <div class="auth-card-container">
-        <!-- Logo & Title -->
-        <div class="auth-header">
-          <div class="auth-logo-badge">
-            <div class="brand-logo-icon">B</div>
-            <span class="brand-title" style="font-size: 20px;">BookNGo <span class="pro-chip">PRO</span></span>
-          </div>
-          <h1 class="auth-header-title">Welcome to BookNGo</h1>
-          <p class="auth-header-desc">Select your portal to continue. Book verified specialist slots, manage your business appointment calendar, or administer the platform.</p>
-        </div>
-
-        <!-- Role Selector 3-Card Grid -->
-        <div>
-          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 8px;">1. Select Your Role</div>
-          <div class="role-cards-grid">
-            <div class="role-card selected" id="roleCardCustomer" onclick="window.app.selectAuthRole('customer')">
-              <span class="role-card-icon">👤</span>
-              <span class="role-card-title">Customer</span>
-              <span class="role-card-desc">Search services, book slots & review specialists</span>
-            </div>
-            <div class="role-card" id="roleCardProvider" onclick="window.app.selectAuthRole('provider')">
-              <span class="role-card-icon">🏢</span>
-              <span class="role-card-title">Provider</span>
-              <span class="role-card-desc">Business calendar, staff & waitlist queue</span>
-            </div>
-            <div class="role-card" id="roleCardAdmin" onclick="window.app.selectAuthRole('admin')">
-              <span class="role-card-icon">🛡️</span>
-              <span class="role-card-title">Admin</span>
-              <span class="role-card-desc">Platform approvals, reports & analytics</span>
-            </div>
+    <div class="simple-auth-wrapper">
+      <div class="simple-auth-card">
+        <!-- Logo -->
+        <div class="simple-brand-header">
+          <div class="brand-logo-icon">B</div>
+          <div>
+            <h1 class="simple-brand-title">BookNGo</h1>
+            <p class="simple-brand-sub">Book appointment slots & manage schedules</p>
           </div>
         </div>
 
-        <!-- Auth Tabs: Sign In / Create Account -->
-        <div>
-          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-subtle); margin-bottom: 8px;">2. Authentication</div>
-          <div class="auth-tabs">
-            <button class="auth-tab-btn active" id="authTabSignIn" onclick="window.app.switchAuthMode('signin')">Sign In</button>
-            <button class="auth-tab-btn" id="authTabSignUp" onclick="window.app.switchAuthMode('signup')">Create Account</button>
-          </div>
+        <!-- Role Toggle Pills -->
+        <div class="simple-role-toggle">
+          <button class="simple-role-btn active" id="btnRoleCustomer" onclick="window.app.selectAuthRole('customer')">
+            <span>👤</span> <span>Customer</span>
+          </button>
+          <button class="simple-role-btn" id="btnRoleProvider" onclick="window.app.selectAuthRole('provider')">
+            <span>🏢</span> <span>Business / Provider</span>
+          </button>
         </div>
 
-        <!-- Auth Form -->
-        <form class="auth-form" onsubmit="window.app.handleAuthSubmit(event)">
-          <!-- Dynamic signup fields -->
+        <!-- Simple Auth Form -->
+        <form class="simple-form" onsubmit="window.app.handleAuthSubmit(event)">
           <div class="form-group" id="authNameField" style="display: none;">
             <label class="form-label">Full Name</label>
             <input type="text" id="authNameInput" class="form-input" placeholder="e.g. Alex Morgan">
@@ -67,24 +44,12 @@
 
           <div class="form-group" id="authBizField" style="display: none;">
             <label class="form-label">Business / Shop Name</label>
-            <input type="text" id="authBizNameInput" class="form-input" placeholder="e.g. Modern Aesthetics Lounge">
-          </div>
-
-          <div class="form-group" id="authCatField" style="display: none;">
-            <label class="form-label">Business Category</label>
-            <select id="authBizCatInput" class="form-select">
-              <option value="Salons & Spas">Salons & Spas</option>
-              <option value="Beauty & Wellness">Beauty & Wellness</option>
-              <option value="Healthcare & Clinics">Healthcare & Clinics</option>
-              <option value="Fitness & Sports">Fitness & Sports</option>
-              <option value="Education & Tutoring">Education & Tutoring</option>
-              <option value="Home Services & Repairs">Home Services & Repairs</option>
-            </select>
+            <input type="text" id="authBizNameInput" class="form-input" placeholder="e.g. Glow Salon & Spa">
           </div>
 
           <div class="form-group">
-            <label class="form-label">Email / Gmail Address</label>
-            <input type="email" id="authEmailInput" class="form-input" placeholder="name@gmail.com" required value="alex@demo.com">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="authEmailInput" class="form-input" placeholder="your.name@gmail.com" required value="alex@demo.com">
           </div>
 
           <div class="form-group">
@@ -92,18 +57,20 @@
             <input type="password" id="authPasswordInput" class="form-input" placeholder="••••••••" required value="password123">
           </div>
 
-          <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px;" id="authSubmitBtn">
-            Sign In to BookNGo
+          <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 14px;" id="authSubmitBtn">
+            Continue to BookNGo →
           </button>
         </form>
 
-        <!-- Quick 1-Click Demo Shortcut Chips -->
-        <div class="quick-demo-accounts">
-          <span class="quick-demo-title">⚡ Or Test Immediately with 1-Click Demo Profiles</span>
-          <div class="quick-demo-buttons">
-            <button class="demo-chip-btn" onclick="window.app.quickDemoLogin('customer')">👤 Demo Customer</button>
-            <button class="demo-chip-btn" onclick="window.app.quickDemoLogin('provider')">🏢 Demo Provider (Salon)</button>
-            <button class="demo-chip-btn" onclick="window.app.quickDemoLogin('admin')">🛡️ Demo Admin</button>
+        <!-- Fast 1-Click Demo Buttons -->
+        <div class="simple-demo-section">
+          <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">Or explore instantly:</span>
+          <div style="display: flex; gap: 8px; justify-content: center; margin-top: 8px;">
+            <button class="demo-chip-btn" onclick="window.app.quickDemoLogin('customer')">👤 Test as Customer</button>
+            <button class="demo-chip-btn" onclick="window.app.quickDemoLogin('provider')">🏢 Test as Provider</button>
+          </div>
+          <div style="text-align: center; margin-top: 14px;">
+            <a href="#" style="font-size: 11px; color: var(--text-muted); text-decoration: underline;" onclick="event.preventDefault(); window.app.quickDemoLogin('admin')">Platform Admin Login</a>
           </div>
         </div>
       </div>
@@ -112,113 +79,92 @@
 
 
   <!-- ========================================================
-       PORTAL 2: CUSTOMER PORTAL (SEARCH SERVICES & BOOK A SLOT)
+       PORTAL 2: SIMPLE & BEAUTIFUL CUSTOMER PORTAL
        ======================================================== -->
   <div class="portal-view" id="customerPortal">
     <div class="customer-layout">
-      <!-- Customer Navbar -->
-      <header class="customer-navbar">
-        <div class="brand-badge-container">
-          <div class="brand-logo-icon">B</div>
-          <div class="brand-titles">
-            <span class="brand-title">BookNGo</span>
-            <span class="brand-subtitle">Customer Portal</span>
+      <!-- Clean Top Navbar -->
+      <header class="simple-navbar">
+        <div style="display: flex; align-items: center; gap: 24px;">
+          <div class="brand-badge-container">
+            <div class="brand-logo-icon">B</div>
+            <span class="brand-title" style="font-size: 18px;">BookNGo</span>
+          </div>
+
+          <!-- Nav Tabs -->
+          <div class="simple-nav-tabs">
+            <button class="simple-tab-btn active" id="custNavExplore" onclick="window.app.switchCustomerTab('explore')">
+              🔍 Find Services
+            </button>
+            <button class="simple-tab-btn" id="custNavBookings" onclick="window.app.switchCustomerTab('bookings')">
+              📅 My Appointments
+            </button>
           </div>
         </div>
 
-        <!-- Navigation Tabs -->
-        <div class="cust-nav-links">
-          <button class="cust-nav-btn active" id="custNavExplore" onclick="window.app.switchCustomerTab('explore')">
-            🔍 Explore Services
-          </button>
-          <button class="cust-nav-btn" id="custNavBookings" onclick="window.app.switchCustomerTab('bookings')">
-            📅 My Appointments & Waitlist
-          </button>
-        </div>
-
-        <!-- User Profile Pill & Actions -->
         <div style="display: flex; align-items: center; gap: 12px;">
-          <div class="profile-card" style="background: var(--bg-surface-alt); padding: 4px 12px; border-radius: var(--radius-full);">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" id="custUserAvatar" class="profile-avatar" style="width: 26px; height: 26px;">
-            <span class="profile-name" id="custUserName" style="font-size: 12px;">Alex Morgan</span>
-          </div>
-          <button class="icon-btn" onclick="window.app.toggleTheme()" title="Toggle Theme">🌙</button>
-          <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="window.app.logout()">
-            Sign Out
-          </button>
+          <div style="font-size: 13px; font-weight: 600; color: var(--text-main);" id="custUserName">Alex Morgan</div>
+          <button class="icon-btn" onclick="window.app.toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
+          <button class="btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="window.app.logout()">Sign Out</button>
         </div>
       </header>
 
-      <!-- Customer Main Scrollable Workspace -->
+      <!-- Customer Body -->
       <div class="customer-body-scroll">
         <!-- TAB 1: Explore & Book a Slot -->
         <div id="customerTabExplore">
-          <!-- Hero Search Banner -->
-          <div class="customer-hero">
-            <div>
-              <h2 style="font-size: 22px; font-weight: 800; letter-spacing: -0.01em;">Find & Book Verified Appointments</h2>
-              <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Choose from premier salons, healthcare clinics, fitness coaches, and specialists. Reserve your time slot or join live waitlists.</p>
-            </div>
-
-            <!-- Main Live Search Bar -->
-            <div class="hero-main-search">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-subtle);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="text" class="hero-search-input" id="custSearchInput" placeholder="Search service name (e.g. Haircut, Facial, Dental Checkup, Personal Training...)" oninput="window.app.filterCustomerServices()">
-            </div>
-
-            <!-- Category Pills -->
-            <div class="category-chips-row" id="custCategoryPills">
-              <!-- Populated dynamically by app.js -->
-            </div>
+          <!-- Simple Search Bar -->
+          <div class="simple-search-wrap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-subtle);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" class="simple-search-input" id="custSearchInput" placeholder="What service are you looking for? (e.g. Haircut, Dentist, Facial, Workout...)" oninput="window.app.filterCustomerServices()">
           </div>
 
-          <!-- Services & Providers Grid -->
+          <!-- Category Pills -->
+          <div class="simple-category-pills" id="custCategoryPills">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Services / Businesses Grid -->
           <div style="margin-top: 24px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-              <h3 style="font-size: 17px; font-weight: 700;" id="marketplaceGridTitle">Available Businesses & Services</h3>
-              <span style="font-size: 12px; color: var(--text-muted);" id="marketplaceCountLabel">Showing all providers</span>
+              <h2 style="font-size: 18px; font-weight: 800;">Top Verified Businesses</h2>
+              <span style="font-size: 12px; color: var(--text-muted);" id="marketplaceCountLabel">Showing all</span>
             </div>
 
             <div class="providers-marketplace-grid" id="providersMarketplaceMount">
-              <!-- Populated dynamically by app.js -->
+              <!-- Populated dynamically -->
             </div>
           </div>
         </div>
 
-        <!-- TAB 2: My Bookings & Waitlist Standby -->
+        <!-- TAB 2: My Bookings & Waitlists -->
         <div id="customerTabBookings" style="display: none;">
-          <div style="display: flex; flex-direction: column; gap: 24px;">
+          <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
             <div>
-              <h2 style="font-size: 20px; font-weight: 800;">My Appointments & Standby Queue</h2>
-              <p style="font-size: 13px; color: var(--text-muted);">View upcoming confirmed slots, check your live waitlist status, and review completed appointments.</p>
+              <h2 style="font-size: 20px; font-weight: 800;">My Appointments</h2>
+              <p style="font-size: 13px; color: var(--text-muted);">Manage your booked time slots and check standby waitlist positions.</p>
             </div>
 
-            <!-- Upcoming Bookings List -->
+            <!-- Upcoming Appointments -->
             <div>
-              <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <span>📅 Confirmed Upcoming Bookings</span>
-              </h3>
-              <div id="custUpcomingBookingsMount" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+              <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">📅 Confirmed Appointments</h3>
+              <div id="custUpcomingBookingsMount" style="display: flex; flex-direction: column; gap: 10px;">
                 <!-- Populated dynamically -->
               </div>
             </div>
 
-            <!-- Active Standby Waitlist Queue -->
+            <!-- Waitlist Standby Tickets -->
             <div>
-              <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <span>⏳ Active Standby Waitlists</span>
-              </h3>
-              <div id="custWaitlistMount" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+              <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">⏳ Standby Waitlist Queue</h3>
+              <div id="custWaitlistMount" style="display: flex; flex-direction: column; gap: 10px;">
                 <!-- Populated dynamically -->
               </div>
             </div>
 
             <!-- Completed Bookings (Reviewable) -->
             <div>
-              <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <span>✅ Completed Appointments (Leave a Review)</span>
-              </h3>
-              <div id="custCompletedBookingsMount" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px;">
+              <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">✅ Past Completed Visits</h3>
+              <div id="custCompletedBookingsMount" style="display: flex; flex-direction: column; gap: 10px;">
                 <!-- Populated dynamically -->
               </div>
             </div>
@@ -230,168 +176,58 @@
 
 
   <!-- ========================================================
-       PORTAL 3: PROVIDER PORTAL (SCHEDULO CALENDAR & WAITLIST)
+       PORTAL 3: PROVIDER PORTAL (CLEAN CALENDAR & WAITLIST)
        ======================================================== -->
   <div class="portal-view" id="providerPortal">
     <div class="app-layout">
-      <!-- Left Sidebar -->
-      <aside class="sidebar" id="sidebar">
-        <!-- Sidebar Brand Header -->
-        <div class="sidebar-header">
-          <a href="#" class="brand-badge-container">
-            <div class="brand-logo-icon">B</div>
-            <div class="brand-titles">
-              <span class="brand-title">BookNGo <span class="pro-chip">PROVIDER</span></span>
-              <span class="brand-subtitle">Calendar & Waitlist</span>
-            </div>
-          </a>
-          <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Toggle Sidebar">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
-          </button>
-        </div>
-
-        <!-- Active Provider Account -->
-        <div class="provider-selector-wrap">
-          <button class="provider-dropdown-trigger" onclick="window.app.openModal('providerModal')" title="Switch or Manage Provider Account">
-            <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=120&q=80" id="activeProviderImg" class="provider-avatar-mini" alt="Provider">
-            <div class="provider-info-mini">
-              <div class="provider-name-mini" id="activeProviderName">Aurora Glow Salon & Spa</div>
-              <div class="provider-cat-mini" id="activeProviderCategory">Salons & Spas</div>
-            </div>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-          </button>
-        </div>
-
-        <!-- Navigation Menu -->
-        <nav class="sidebar-nav">
-          <span class="nav-section-label">Scheduling</span>
-          <a href="#" class="nav-item active" onclick="window.store.setView('timeline')">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-            <span class="nav-label">Calendar Timeline</span>
-          </a>
-          <a href="#" class="nav-item" onclick="window.store.setView('waitlist-board')">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span class="nav-label">Waitlist Queue</span>
-            <span class="nav-badge urgent" id="sidebarWaitlistBadge">6 Live</span>
-          </a>
-          <a href="#" class="nav-item" onclick="window.app.openCommandPalette()">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <span class="nav-label">Quick Search</span>
-            <span class="nav-badge">⌘K</span>
-          </a>
-
-          <span class="nav-section-label" style="margin-top: 14px;">Business Settings</span>
-          <a href="#" class="nav-item" onclick="window.app.openModal('providerModal')">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span class="nav-label">Specialists & Staff</span>
-          </a>
-          <a href="#" class="nav-item" onclick="window.app.openModal('providerModal')">
-            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/></svg>
-            <span class="nav-label">Service Catalog</span>
-          </a>
-        </nav>
-
-        <!-- Sidebar Bottom Footer -->
-        <div class="sidebar-footer">
-          <div class="profile-card" onclick="window.app.openModal('providerModal')" style="cursor: pointer;">
-            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80" class="profile-avatar" alt="Provider User">
-            <div class="profile-text">
-              <div class="profile-name" id="sidebarUserName">Business Owner</div>
-              <div class="profile-role">Provider Account</div>
-            </div>
-          </div>
-          <button class="icon-btn" onclick="window.app.logout()" title="Sign Out">🚪</button>
-        </div>
-      </aside>
-
-      <!-- Main Workspace -->
-      <main class="main-workspace">
+      <!-- Clean Provider Workspace -->
+      <main class="main-workspace" style="width: 100%;">
+        <!-- Provider Top Navigation Header -->
         <header class="top-header">
-          <!-- Date Navigator -->
-          <div class="date-nav-group">
-            <button class="btn-today" id="btnToday">Today</button>
-            <button class="nav-arrow-btn" id="btnPrevDate" title="Previous Day">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
-            </button>
-            <button class="nav-arrow-btn" id="btnNextDate" title="Next Day">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
-            </button>
-            <div class="current-date-title">
-              <span id="currentDateText">Loading...</span>
-              <span class="current-date-sub" id="currentDateSub">Today</span>
+          <!-- Business Title & Date -->
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div class="brand-badge-container">
+              <div class="brand-logo-icon">B</div>
+              <div>
+                <span class="brand-title" id="activeProviderName" style="font-size: 15px;">Aurora Glow Salon & Spa</span>
+                <span class="brand-subtitle" id="activeProviderCategory">Salons & Spas</span>
+              </div>
+            </div>
+
+            <div class="date-nav-group" style="margin-left: 20px;">
+              <button class="btn-today" id="btnToday">Today</button>
+              <button class="nav-arrow-btn" id="btnPrevDate">◀</button>
+              <button class="nav-arrow-btn" id="btnNextDate">▶</button>
+              <div class="current-date-title" style="font-size: 14px;">
+                <span id="currentDateText">Loading...</span>
+              </div>
             </div>
           </div>
 
-          <!-- Search Bar -->
-          <div class="global-search-wrap">
-            <svg class="search-icon-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" class="search-input" placeholder="Search appointments, staff, waitlist..." onclick="window.app.openCommandPalette()" readonly>
-            <span class="search-kbd-shortcut">⌘K</span>
-          </div>
-
-          <!-- Header Right Actions -->
+          <!-- Provider Actions -->
           <div class="header-right-actions">
-            <!-- View Switcher -->
-            <div class="view-switcher">
-              <button class="view-btn active" data-view="timeline">Timeline</button>
-              <button class="view-btn" data-view="week">Week</button>
-              <button class="view-btn" data-view="waitlist-board">Waitlist Board</button>
-            </div>
-
-            <button class="btn-secondary btn-waitlist-action" onclick="window.app.openAddWaitlistModal()">
-              <span>⏳</span> <span>+ Waitlist</span>
-            </button>
             <button class="btn-primary" onclick="window.app.openNewBookingModal()">
-              <span>+</span> <span>New Booking</span>
+              <span>+</span> <span>New Appointment</span>
+            </button>
+            <button class="btn-secondary" id="toggleWaitlistBtn">
+              <span>⏳</span> <span>Waitlist Queue</span>
             </button>
             <button class="icon-btn" onclick="window.app.toggleTheme()" title="Toggle Theme">🌙</button>
-            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="window.app.logout()">
-              Sign Out
-            </button>
+            <button class="btn-secondary" onclick="window.app.logout()">Sign Out</button>
           </div>
         </header>
 
-        <!-- KPI Status Bar -->
-        <section class="kpi-bar">
-          <div class="kpi-metrics-group">
-            <div class="kpi-stat-item">
-              <div class="kpi-icon-pill bookings">📅</div>
-              <div class="kpi-stat-details">
-                <span class="kpi-stat-value" id="kpiBookingsCount">0 Slots</span>
-                <span class="kpi-stat-label">Today's Bookings</span>
-              </div>
-            </div>
-            <div class="kpi-stat-item">
-              <div class="kpi-icon-pill waitlist">⏳</div>
-              <div class="kpi-stat-details">
-                <span class="kpi-stat-value" id="kpiWaitlistCount">0 Waiting</span>
-                <span class="kpi-stat-label">Live Standby Queue</span>
-              </div>
-            </div>
-            <div class="kpi-stat-item">
-              <div class="kpi-icon-pill capacity">⚡</div>
-              <div class="kpi-stat-details">
-                <span class="kpi-stat-value" id="kpiCapacityPercent">0% Full</span>
-                <span class="kpi-stat-label">Staff Load</span>
-              </div>
-            </div>
-            <div class="kpi-stat-item">
-              <div class="kpi-icon-pill revenue">💎</div>
-              <div class="kpi-stat-details">
-                <span class="kpi-stat-value" id="kpiRevenueTotal">$0</span>
-                <span class="kpi-stat-label">Est. Revenue</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="kpi-right-actions">
-            <button class="toggle-waitlist-btn active" id="toggleWaitlistBtn">
-              <span>⏳</span> <span>Waitlist Drawer</span>
-            </button>
+        <!-- Clean KPI Bar -->
+        <section class="kpi-bar" style="padding: 8px 24px;">
+          <div class="kpi-metrics-group" style="gap: 24px;">
+            <div style="font-size: 13px;">📅 Today's Bookings: <strong id="kpiBookingsCount">0</strong></div>
+            <div style="font-size: 13px;">⏳ Live Waitlist: <strong id="kpiWaitlistCount" style="color: var(--urgent-solid);">0</strong></div>
+            <div style="font-size: 13px;">⚡ Staff Capacity: <strong id="kpiCapacityPercent">0%</strong></div>
+            <div style="font-size: 13px;">💎 Revenue: <strong id="kpiRevenueTotal">$0</strong></div>
           </div>
         </section>
 
-        <!-- Calendar & Waitlist Split View -->
+        <!-- Calendar Split Workspace -->
         <div class="calendar-workspace-split">
           <div class="calendar-main-view" id="calendarMount">
             <!-- Calendar Controller mounts timeline here -->
@@ -401,24 +237,24 @@
           <aside class="waitlist-panel" id="waitlistPanel">
             <div class="waitlist-panel-header">
               <div class="waitlist-title-wrap">
-                <h2 class="waitlist-title">Waitlist Queue</h2>
+                <h3 class="waitlist-title" style="font-size: 15px;">Standby Waitlist</h3>
                 <span class="waitlist-count-badge" id="waitlistHeaderCount">6 In Queue</span>
               </div>
               <button class="icon-btn" id="closeWaitlistBtn">✕</button>
             </div>
 
+            <!-- Waitlist Filter Tabs -->
             <div class="waitlist-controls-wrap">
               <input type="text" class="waitlist-search-input" id="waitlistSearchInput" placeholder="Filter waitlist...">
               <div class="waitlist-filter-tabs">
                 <button class="waitlist-tab-btn active" data-filter="all">All</button>
                 <button class="waitlist-tab-btn" data-filter="urgent">Urgent</button>
                 <button class="waitlist-tab-btn" data-filter="vip">VIP</button>
-                <button class="waitlist-tab-btn" data-filter="flexible">Flexible</button>
                 <button class="waitlist-tab-btn" data-filter="today">Today</button>
-                <button class="waitlist-tab-btn" data-filter="notified">Notified</button>
               </div>
             </div>
 
+            <!-- Waitlist Cards List -->
             <div class="waitlist-cards-list" id="waitlistCardsMount">
               <!-- Waitlist Controller mounts cards here -->
             </div>
@@ -436,85 +272,54 @@
 
 
   <!-- ========================================================
-       PORTAL 4: ADMIN PORTAL (PLATFORM OVERSIGHT & APPROVALS)
+       PORTAL 4: ADMIN PORTAL (CLEAN OVERSIGHT)
        ======================================================== -->
   <div class="portal-view" id="adminPortal">
     <div class="admin-layout">
-      <!-- Admin Header -->
       <header class="admin-header">
         <div class="brand-badge-container">
           <div class="brand-logo-icon" style="background: linear-gradient(135deg, #10B981, #059669);">🛡️</div>
-          <div class="brand-titles">
-            <span class="brand-title">BookNGo <span class="pro-chip" style="background: #ECFDF5; color: #059669;">ADMIN</span></span>
-            <span class="brand-subtitle">Platform Management</span>
-          </div>
+          <span class="brand-title">BookNGo Admin</span>
         </div>
-
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <button class="icon-btn" onclick="window.app.toggleTheme()" title="Toggle Theme">🌙</button>
+        <div style="display: flex; gap: 10px;">
+          <button class="icon-btn" onclick="window.app.toggleTheme()">🌙</button>
           <button class="btn-secondary" onclick="window.app.logout()">Sign Out</button>
         </div>
       </header>
 
-      <!-- Admin Body -->
-      <div class="admin-body-scroll">
-        <!-- Platform KPI Cards -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 20px; border-radius: var(--radius-lg);">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Businesses</div>
-            <div style="font-size: 24px; font-weight: 800; color: var(--text-main); margin-top: 4px;" id="adminTotalProviders">12</div>
+      <div class="admin-body-scroll" style="max-width: 1000px; margin: 0 auto; width: 100%;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 16px; border-radius: var(--radius-md);">
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">TOTAL BUSINESSES</div>
+            <div style="font-size: 22px; font-weight: 800; margin-top: 4px;" id="adminTotalProviders">12</div>
           </div>
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 20px; border-radius: var(--radius-lg);">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Customers</div>
-            <div style="font-size: 24px; font-weight: 800; color: var(--text-main); margin-top: 4px;" id="adminTotalCustomers">8</div>
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 16px; border-radius: var(--radius-md);">
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">REGISTERED CUSTOMERS</div>
+            <div style="font-size: 22px; font-weight: 800; margin-top: 4px;" id="adminTotalCustomers">8</div>
           </div>
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 20px; border-radius: var(--radius-lg);">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Total Bookings</div>
-            <div style="font-size: 24px; font-weight: 800; color: var(--text-main); margin-top: 4px;" id="adminTotalBookings">18</div>
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 16px; border-radius: var(--radius-md);">
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">TOTAL APPOINTMENTS</div>
+            <div style="font-size: 22px; font-weight: 800; margin-top: 4px;" id="adminTotalBookings">18</div>
           </div>
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 20px; border-radius: var(--radius-lg);">
-            <div style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Active Waitlist Requests</div>
-            <div style="font-size: 24px; font-weight: 800; color: var(--urgent-solid); margin-top: 4px;" id="adminTotalWaitlist">6</div>
+          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 16px; border-radius: var(--radius-md);">
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">ACTIVE WAITLIST</div>
+            <div style="font-size: 22px; font-weight: 800; color: var(--urgent-solid); margin-top: 4px;" id="adminTotalWaitlist">6</div>
           </div>
         </div>
 
-        <!-- Provider Verification List -->
-        <div>
-          <h3 style="font-size: 17px; font-weight: 700; margin-bottom: 12px;">🏢 Registered Business Verification</h3>
+        <div style="margin-top: 24px;">
+          <h3 style="font-size: 16px; font-weight: 700; margin-bottom: 12px;">Registered Businesses</h3>
           <table class="admin-table">
             <thead>
               <tr>
                 <th>Business Name</th>
                 <th>Category</th>
                 <th>Location</th>
-                <th>Contact Email</th>
                 <th>Status</th>
                 <th>Action</th>
               </tr>
             </thead>
-            <tbody id="adminProvidersTableBody">
-              <!-- Populated dynamically -->
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Dispute & Customer Issue Reports -->
-        <div>
-          <h3 style="font-size: 17px; font-weight: 700; margin-bottom: 12px;">⚠️ Customer Reports & Disputes</h3>
-          <table class="admin-table">
-            <thead>
-              <tr>
-                <th>Booking ID</th>
-                <th>Provider</th>
-                <th>Customer</th>
-                <th>Issue Details</th>
-                <th>Status</th>
-                <th>Resolution</th>
-              </tr>
-            </thead>
-            <tbody id="adminReportsTableBody">
-              <!-- Populated dynamically -->
-            </tbody>
+            <tbody id="adminProvidersTableBody"></tbody>
           </table>
         </div>
       </div>
@@ -523,57 +328,50 @@
 
 
   <!-- ========================================================
-       5. INTERACTIVE MODALS & DRAWERS
+       MODALS: CLEAN & SIMPLE
        ======================================================== -->
 
-  <!-- Customer Interactive Slot Booking Modal -->
+  <!-- Customer Slot Booking Modal -->
   <div class="modal-backdrop" id="customerSlotModal">
-    <div class="modal-container" style="max-width: 560px;">
+    <div class="modal-container" style="max-width: 500px;">
       <div class="modal-header">
         <div>
           <h3 class="modal-title" id="slotModalProviderName">Book an Appointment Slot</h3>
-          <p style="font-size: 12px; color: var(--text-muted);" id="slotModalProviderLocation">Downtown Center</p>
+          <p style="font-size: 12px; color: var(--text-muted);" id="slotModalProviderLocation">Downtown</p>
         </div>
         <button class="modal-close-btn" onclick="window.app.closeModal('customerSlotModal')">✕</button>
       </div>
       <form onsubmit="window.app.submitCustomerSlotBooking(event)">
         <div class="modal-body">
-          <!-- Step 1: Select Service -->
           <div class="form-group">
-            <label class="form-label">1. Select Service</label>
+            <label class="form-label">Service</label>
             <select id="custSlotServiceSelect" class="form-select" onchange="window.app.onSlotServiceOrDateChange()" required></select>
           </div>
 
-          <!-- Step 2: Select Specialist -->
           <div class="form-group">
-            <label class="form-label">2. Specialist</label>
+            <label class="form-label">Specialist</label>
             <select id="custSlotWorkerSelect" class="form-select" onchange="window.app.onSlotServiceOrDateChange()"></select>
           </div>
 
-          <!-- Step 3: Select Date -->
           <div class="form-group">
-            <label class="form-label">3. Select Date</label>
+            <label class="form-label">Date</label>
             <input type="date" id="custSlotDateInput" class="form-input" onchange="window.app.onSlotServiceOrDateChange()" required>
           </div>
 
-          <!-- Step 4: Available Slot Badges -->
           <div>
-            <label class="form-label" style="margin-bottom: 8px; display: block;">4. Pick Available Time Slot</label>
-            <div id="custAvailableSlotsMount">
-              <!-- Populated dynamically with open slot badges -->
-            </div>
+            <label class="form-label" style="margin-bottom: 8px; display: block;">Select Time Slot</label>
+            <div id="custAvailableSlotsMount"></div>
             <input type="hidden" id="custSelectedTimeInput" required>
           </div>
 
-          <!-- Notes -->
           <div class="form-group">
-            <label class="form-label">Special Requests or Notes (Optional)</label>
-            <textarea id="custSlotNotesInput" class="form-textarea" rows="2" placeholder="Any preferences for the specialist..."></textarea>
+            <label class="form-label">Notes (Optional)</label>
+            <input type="text" id="custSlotNotesInput" class="form-input" placeholder="Any preferences...">
           </div>
         </div>
         <div class="modal-footer" style="justify-content: space-between;">
-          <button type="button" class="btn-secondary" style="background: var(--warning-bg); border-color: var(--warning-border); color: var(--warning-text);" onclick="window.app.openCustomerStandbyWaitlistModal()">
-            ⏳ Slot Full? Join Waitlist
+          <button type="button" class="btn-secondary" style="font-size: 12px;" onclick="window.app.openCustomerStandbyWaitlistModal()">
+            ⏳ Full? Join Waitlist
           </button>
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn-secondary" onclick="window.app.closeModal('customerSlotModal')">Cancel</button>
@@ -584,67 +382,48 @@
     </div>
   </div>
 
-  <!-- Customer Join Standby Waitlist Modal -->
+  <!-- Customer Join Waitlist Modal -->
   <div class="modal-backdrop" id="customerWaitlistModal">
-    <div class="modal-container">
+    <div class="modal-container" style="max-width: 460px;">
       <div class="modal-header">
         <h3 class="modal-title">Join Live Standby Waitlist</h3>
         <button class="modal-close-btn" onclick="window.app.closeModal('customerWaitlistModal')">✕</button>
       </div>
       <form onsubmit="window.app.submitCustomerWaitlist(event)">
         <div class="modal-body">
-          <p style="font-size: 13px; color: var(--text-muted);">
-            If a client cancels or an open slot opens up, you'll be automatically notified via SMS to claim the slot within 15 minutes!
+          <p style="font-size: 12px; color: var(--text-muted);">
+            If an appointment cancels, we'll notify you immediately via SMS to claim the slot!
           </p>
           <div class="form-group">
             <label class="form-label">Service</label>
             <select id="cwServiceSelect" class="form-select" required></select>
           </div>
           <div class="form-group">
-            <label class="form-label">Specialist Preference</label>
-            <select id="cwWorkerSelect" class="form-select"></select>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Desired Date</label>
-              <input type="date" id="cwDateInput" class="form-input" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Preferred Time Window</label>
-              <select id="cwTimeWindowSelect" class="form-select">
-                <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
-                <option value="Afternoon (12:00 - 16:00)">Afternoon (12:00 - 16:00)</option>
-                <option value="Evening (16:00 - 19:00)">Evening (16:00 - 19:00)</option>
-                <option value="Any Time Today">Any Time Today</option>
-              </select>
-            </div>
+            <label class="form-label">Preferred Date</label>
+            <input type="date" id="cwDateInput" class="form-input" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Flexibility & Notice</label>
-            <select id="cwPrioritySelect" class="form-select">
-              <option value="urgent">Urgent — Ready on 15 mins notice</option>
-              <option value="flexible">Flexible Window</option>
-              <option value="normal">Standard Request</option>
+            <label class="form-label">Time Window</label>
+            <select id="cwTimeWindowSelect" class="form-select">
+              <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
+              <option value="Afternoon (12:00 - 16:00)">Afternoon (12:00 - 16:00)</option>
+              <option value="Any Time Today">Any Time Today</option>
             </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Notes</label>
-            <textarea id="cwNotesInput" class="form-textarea" rows="2" placeholder="e.g. Willing to take cancellation today..."></textarea>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="window.app.closeModal('customerWaitlistModal')">Cancel</button>
-          <button type="submit" class="btn-primary">Join Standby Queue</button>
+          <button type="submit" class="btn-primary">Join Waitlist</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Leave a Review Modal -->
+  <!-- Leave Review Modal -->
   <div class="modal-backdrop" id="leaveReviewModal">
-    <div class="modal-container" style="max-width: 460px;">
+    <div class="modal-container" style="max-width: 420px;">
       <div class="modal-header">
-        <h3 class="modal-title">Review & Feedback</h3>
+        <h3 class="modal-title">Write a Review</h3>
         <button class="modal-close-btn" onclick="window.app.closeModal('leaveReviewModal')">✕</button>
       </div>
       <form onsubmit="window.app.submitCustomerReview(event)">
@@ -653,13 +432,12 @@
           <input type="hidden" id="revProviderId">
 
           <div>
-            <div style="font-weight: 700; font-size: 14px;" id="revProviderTitle">Aurora Glow Salon</div>
-            <div style="font-size: 12px; color: var(--text-muted);" id="revServiceTitle">Precision Haircut</div>
+            <div style="font-weight: 700; font-size: 14px;" id="revProviderTitle">Business Name</div>
+            <div style="font-size: 12px; color: var(--text-muted);" id="revServiceTitle">Service Name</div>
           </div>
 
-          <div class="form-group" style="align-items: center; text-align: center; margin: 10px 0;">
-            <label class="form-label">Your Rating</label>
-            <div class="star-rating-row" id="starRatingRow">
+          <div style="text-align: center; margin: 12px 0;">
+            <div class="star-rating-row" id="starRatingRow" style="justify-content: center;">
               <span class="star-rating-item active" data-rating="1" onclick="window.app.setReviewRating(1)">★</span>
               <span class="star-rating-item active" data-rating="2" onclick="window.app.setReviewRating(2)">★</span>
               <span class="star-rating-item active" data-rating="3" onclick="window.app.setReviewRating(3)">★</span>
@@ -670,8 +448,8 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Write your experience</label>
-            <textarea id="revCommentInput" class="form-textarea" rows="3" placeholder="How was the service? What did you like?" required></textarea>
+            <label class="form-label">Review Comment</label>
+            <textarea id="revCommentInput" class="form-textarea" rows="3" placeholder="Share your experience..." required></textarea>
           </div>
         </div>
         <div class="modal-footer">
@@ -682,72 +460,9 @@
     </div>
   </div>
 
-  <!-- Provider Business Account Switcher & Login Modal -->
-  <div class="modal-backdrop" id="providerModal">
-    <div class="modal-container">
-      <div class="modal-header">
-        <h3 class="modal-title">Provider Business Account</h3>
-        <button class="modal-close-btn" onclick="window.app.closeModal('providerModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 6px;">
-          Log into your verified business account or register a new business to manage appointments, staff schedules, and waitlists.
-        </p>
-
-        <form onsubmit="event.preventDefault(); window.store.loginAsProvider(document.getElementById('providerLoginEmail').value); window.app.closeModal('providerModal'); window.app.showToast('Logged in as provider!', 'success');">
-          <div class="form-group" style="margin-bottom: 12px;">
-            <label class="form-label">Provider Business Email</label>
-            <input type="email" id="providerLoginEmail" class="form-input" placeholder="e.g. aurora@salon.com" required value="aurora@salon.com">
-          </div>
-          <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">
-            Log In as Provider
-          </button>
-        </form>
-
-        <div style="text-align: center; font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; margin: 16px 0 10px;">
-          — Or Register a New Business —
-        </div>
-
-        <form onsubmit="event.preventDefault(); window.store.registerProviderBusiness({ name: document.getElementById('newBizName').value, category: document.getElementById('newBizCat').value, email: document.getElementById('newBizEmail').value }); window.app.closeModal('providerModal'); window.app.showToast('Registered & loaded your business!', 'success');">
-          <div class="form-group" style="margin-bottom: 10px;">
-            <label class="form-label">Business / Shop Name</label>
-            <input type="text" id="newBizName" class="form-input" placeholder="e.g. Luxe Studio & Wellness" required>
-          </div>
-          <div class="form-row" style="margin-bottom: 10px;">
-            <div class="form-group">
-              <label class="form-label">Category</label>
-              <select id="newBizCat" class="form-select">
-                <option value="Salons & Spas">Salons & Spas</option>
-                <option value="Beauty & Wellness">Beauty & Wellness</option>
-                <option value="Healthcare & Clinics">Healthcare & Clinics</option>
-                <option value="Fitness & Sports">Fitness & Sports</option>
-                <option value="Education & Tutoring">Education & Tutoring</option>
-                <option value="Home Services & Repairs">Home Services & Repairs</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Contact Email</label>
-              <input type="email" id="newBizEmail" class="form-input" placeholder="contact@mybiz.com" required>
-            </div>
-          </div>
-          <button type="submit" class="btn-secondary" style="width: 100%; justify-content: center; background: var(--bg-surface-alt);">
-            ＋ Register & Open Business Dashboard
-          </button>
-        </form>
-
-        <div style="text-align: center; font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; margin: 16px 0 10px;">
-          — Existing Accounts —
-        </div>
-        <div id="providerSelectList" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
-          <!-- Populated by app.js -->
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Provider New Appointment Modal -->
+  <!-- Provider New Booking Modal -->
   <div class="modal-backdrop" id="newBookingModal">
-    <div class="modal-container">
+    <div class="modal-container" style="max-width: 480px;">
       <div class="modal-header">
         <h3 class="modal-title">New Appointment</h3>
         <button class="modal-close-btn" onclick="window.app.closeModal('newBookingModal')">✕</button>
@@ -763,7 +478,7 @@
             <select id="nbServiceSelect" class="form-select" required></select>
           </div>
           <div class="form-group">
-            <label class="form-label">Specialist / Staff Member</label>
+            <label class="form-label">Specialist</label>
             <select id="nbWorkerSelect" class="form-select" required></select>
           </div>
           <div class="form-row">
@@ -772,18 +487,14 @@
               <input type="date" id="nbDateInput" class="form-input" required>
             </div>
             <div class="form-group">
-              <label class="form-label">Time Slot</label>
+              <label class="form-label">Time</label>
               <input type="time" id="nbTimeInput" class="form-input" required>
             </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Notes (Optional)</label>
-            <textarea id="nbNotesInput" class="form-textarea" rows="2" placeholder="Customer preferences..."></textarea>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="window.app.closeModal('newBookingModal')">Cancel</button>
-          <button type="submit" class="btn-primary">Confirm Appointment</button>
+          <button type="submit" class="btn-primary">Confirm Slot</button>
         </div>
       </form>
     </div>
@@ -791,7 +502,7 @@
 
   <!-- Provider Add to Waitlist Modal -->
   <div class="modal-backdrop" id="addWaitlistModal">
-    <div class="modal-container">
+    <div class="modal-container" style="max-width: 460px;">
       <div class="modal-header">
         <h3 class="modal-title">Add Client to Standby Queue</h3>
         <button class="modal-close-btn" onclick="window.app.closeModal('addWaitlistModal')">✕</button>
@@ -799,59 +510,25 @@
       <form onsubmit="window.app.submitAddWaitlist(event)">
         <div class="modal-body">
           <div class="form-group">
-            <label class="form-label">Client Full Name</label>
-            <input type="text" id="wlNameInput" class="form-input" placeholder="e.g. Rachel Green" required>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Phone Number</label>
-              <input type="tel" id="wlPhoneInput" class="form-input" placeholder="+1 (555) 000-0000" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Email</label>
-              <input type="email" id="wlEmailInput" class="form-input" placeholder="client@example.com" required>
-            </div>
+            <label class="form-label">Client Name</label>
+            <input type="text" id="wlNameInput" class="form-input" placeholder="e.g. Jessica Taylor" required>
           </div>
           <div class="form-group">
-            <label class="form-label">Requested Service</label>
+            <label class="form-label">Phone</label>
+            <input type="tel" id="wlPhoneInput" class="form-input" placeholder="+1 (555) 000-0000" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Service</label>
             <select id="wlServiceSelect" class="form-select" required></select>
           </div>
           <div class="form-group">
-            <label class="form-label">Preferred Specialist</label>
-            <select id="wlWorkerSelect" class="form-select"></select>
-          </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Target Date</label>
-              <input type="date" id="wlDateInput" class="form-input" required>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Preferred Time Window</label>
-              <select id="wlTimeWindowSelect" class="form-select">
-                <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
-                <option value="Afternoon (12:00 - 16:00)">Afternoon (12:00 - 16:00)</option>
-                <option value="Late Afternoon (16:00 - 18:30)">Late Afternoon (16:00 - 18:30)</option>
-                <option value="Any Time Today">Any Time Today</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Priority Status</label>
-            <select id="wlPrioritySelect" class="form-select">
-              <option value="urgent">High Urgency (Next Available Cancellation)</option>
-              <option value="vip">VIP Client</option>
-              <option value="flexible">Flexible Window</option>
-              <option value="normal">Standard Request</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Client Notes & Flexibility</label>
-            <textarea id="wlNotesInput" class="form-textarea" rows="2" placeholder="e.g. Can arrive on 15 minutes notice..."></textarea>
+            <label class="form-label">Preferred Date</label>
+            <input type="date" id="wlDateInput" class="form-input" required>
           </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="window.app.closeModal('addWaitlistModal')">Cancel</button>
-          <button type="submit" class="btn-primary">Add to Standby Queue</button>
+          <button type="submit" class="btn-primary">Add to Queue</button>
         </div>
       </form>
     </div>
@@ -859,44 +536,26 @@
 
   <!-- Appointment Details Drawer Modal -->
   <div class="modal-backdrop" id="appointmentDrawerModal">
-    <div class="modal-container" style="max-width: 440px;">
+    <div class="modal-container" style="max-width: 420px;">
       <div class="modal-header">
         <h3 class="modal-title">Appointment Details</h3>
         <button class="modal-close-btn" onclick="window.app.closeModal('appointmentDrawerModal')">✕</button>
       </div>
-      <div class="modal-body" id="appointmentDrawerContent">
-        <!-- Populated dynamically by app.js -->
-      </div>
+      <div class="modal-body" id="appointmentDrawerContent"></div>
     </div>
   </div>
 
   <!-- Notification Smartphone Simulator Modal -->
   <div class="modal-backdrop" id="phoneSimulatorModal">
-    <div class="modal-container" style="max-width: 380px; background: transparent; border: none; box-shadow: none;">
+    <div class="modal-container" style="max-width: 360px; background: transparent; border: none; box-shadow: none;">
       <div class="phone-mockup">
         <div class="phone-screen">
           <div class="phone-notch"></div>
-          <div id="phoneSimulatorContent">
-            <!-- Populated dynamically by app.js -->
-          </div>
+          <div id="phoneSimulatorContent"></div>
         </div>
       </div>
       <div style="text-align: center; margin-top: 14px;">
-        <button class="btn-secondary" style="background: rgba(255,255,255,0.9);" onclick="window.app.closeModal('phoneSimulatorModal')">Close Simulator</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Command Palette Modal -->
-  <div class="modal-backdrop" id="commandPaletteModal">
-    <div class="modal-container" style="max-width: 540px; margin-top: -100px;">
-      <div style="padding: 14px 18px; border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 10px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        <input type="text" id="commandSearchInput" placeholder="Type a client, service, or booking..." style="flex: 1; border: none; font-size: 14px; background: transparent;" oninput="window.app.renderCommandResults(this.value)">
-        <span style="font-size: 11px; color: var(--text-subtle);">ESC to close</span>
-      </div>
-      <div class="modal-body" id="commandResultsList" style="max-height: 320px; padding: 14px 18px;">
-        <!-- Populated dynamically -->
+        <button class="btn-secondary" style="background: rgba(255,255,255,0.9);" onclick="window.app.closeModal('phoneSimulatorModal')">Close</button>
       </div>
     </div>
   </div>
