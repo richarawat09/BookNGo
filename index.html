@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BookNGo — Simple & Fast Appointment Booking</title>
   <meta name="description" content="Simple, modern appointment booking platform for customers and service providers.">
-  <link rel="stylesheet" href="css/variables.css?v=lightpink">
-  <link rel="stylesheet" href="css/style.css?v=lightpink">
+  <link rel="stylesheet" href="css/variables.css?v=calendar_indigo_v2">
+  <link rel="stylesheet" href="css/style.css?v=calendar_indigo_v2">
 </head>
 <body>
 
@@ -221,13 +221,40 @@
               </div>
             </div>
 
-            <div class="date-nav-group" style="margin-left: 20px;">
-              <button class="btn-today" id="btnToday">Today</button>
-              <button class="nav-arrow-btn" id="btnPrevDate">◀</button>
-              <button class="nav-arrow-btn" id="btnNextDate">▶</button>
-              <div class="current-date-title" style="font-size: 14px;">
+            <div class="date-nav-group" style="position: relative;">
+              <button type="button" class="cal-picker-trigger-btn" id="btnOpenDatePicker" title="Open Calendar Dropdown">
+                <span class="cal-icon">📅</span>
                 <span id="currentDateText">Loading...</span>
+                <span class="cal-chevron">▾</span>
+              </button>
+              <button class="btn-today" id="btnToday" title="Jump to Today">Today</button>
+              <button class="nav-arrow-btn" id="btnPrevDate" title="Previous Day">◀</button>
+              <button class="nav-arrow-btn" id="btnNextDate" title="Next Day">▶</button>
+
+              <!-- Floating Calendar Dropdown Popover -->
+              <div class="calendar-popover" id="providerCalendarPopover" style="display: none;">
+                <div id="providerMiniCalMount"></div>
+                <div class="cal-popover-footer">
+                  <button type="button" class="btn-today-link" id="btnPopoverToday">Go to Today</button>
+                  <button type="button" class="btn-close-popover" id="btnClosePopover">Close</button>
+                </div>
               </div>
+            </div>
+
+            <!-- Provider View Switcher -->
+            <div class="view-switcher" style="margin-left: 10px;">
+              <button class="view-btn active" data-view="timeline" title="Multi-Staff Timeline">
+                <span>⏱</span> Timeline
+              </button>
+              <button class="view-btn" data-view="month" title="Full Month Calendar Grid">
+                <span>📅</span> Month
+              </button>
+              <button class="view-btn" data-view="week" title="Weekly Overview">
+                <span>📊</span> Week
+              </button>
+              <button class="view-btn" data-view="waitlist-board" title="Live Standby Waitlist">
+                <span>⏳</span> Waitlist
+              </button>
             </div>
           </div>
 
@@ -380,13 +407,23 @@
             <select id="custSlotWorkerSelect" class="form-select" onchange="window.app.onSlotServiceOrDateChange()"></select>
           </div>
 
+          <!-- Proper Visual Month Calendar Picker -->
           <div class="form-group">
-            <label class="form-label">Date</label>
-            <input type="date" id="custSlotDateInput" class="form-input" onchange="window.app.onSlotServiceOrDateChange()" required>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label class="form-label" style="margin-bottom: 0;">📅 Select Appointment Date</label>
+              <span class="cal-selected-pill" id="custSelectedDateLabel">Select a day</span>
+            </div>
+            <div class="booking-calendar-wrapper">
+              <div id="custBookingCalendarMount"></div>
+            </div>
+            <input type="hidden" id="custSlotDateInput" required>
           </div>
 
           <div>
-            <label class="form-label" style="margin-bottom: 8px; display: block;">Select Time Slot</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label class="form-label" style="margin-bottom: 0;">⚡ Available Time Slots</label>
+              <span style="font-size: 11px; color: var(--text-muted);" id="custSlotCountHint">Select time below</span>
+            </div>
             <div id="custAvailableSlotsMount"></div>
             <input type="hidden" id="custSelectedTimeInput" required>
           </div>
@@ -426,8 +463,14 @@
             <select id="cwServiceSelect" class="form-select" required></select>
           </div>
           <div class="form-group">
-            <label class="form-label">Preferred Date</label>
-            <input type="date" id="cwDateInput" class="form-input" required>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label class="form-label" style="margin-bottom: 0;">📅 Preferred Date</label>
+              <span class="cal-selected-pill" id="cwSelectedDateLabel">Select a day</span>
+            </div>
+            <div class="booking-calendar-wrapper">
+              <div id="cwCalendarMount"></div>
+            </div>
+            <input type="hidden" id="cwDateInput" required>
           </div>
           <div class="form-group">
             <label class="form-label">Time Window</label>
@@ -591,10 +634,10 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Scripts -->
-  <script src="js/data.js?v=pink"></script>
-  <script src="js/store.js?v=pink"></script>
-  <script src="js/calendar.js?v=pink"></script>
-  <script src="js/waitlist.js?v=pink"></script>
-  <script src="js/app.js?v=pink"></script>
+  <script src="js/data.js?v=calendar_indigo_v2"></script>
+  <script src="js/store.js?v=calendar_indigo_v2"></script>
+  <script src="js/calendar.js?v=calendar_indigo_v2"></script>
+  <script src="js/waitlist.js?v=calendar_indigo_v2"></script>
+  <script src="js/app.js?v=calendar_indigo_v2"></script>
 </body>
 </html>

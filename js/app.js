@@ -37,13 +37,55 @@
         }
       });
 
-      // Provider Date Navigation Buttons
+      // Provider Date Navigation & Popover Calendar
+      const btnOpenDatePicker = document.getElementById('btnOpenDatePicker');
+      const providerCalendarPopover = document.getElementById('providerCalendarPopover');
+      const btnClosePopover = document.getElementById('btnClosePopover');
+      const btnPopoverToday = document.getElementById('btnPopoverToday');
+
+      if (btnOpenDatePicker && providerCalendarPopover) {
+        btnOpenDatePicker.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isHidden = providerCalendarPopover.style.display === 'none' || !providerCalendarPopover.style.display;
+          if (isHidden) {
+            providerCalendarPopover.style.display = 'block';
+            this.renderProviderMiniCalendar();
+          } else {
+            providerCalendarPopover.style.display = 'none';
+          }
+        });
+
+        if (btnClosePopover) {
+          btnClosePopover.addEventListener('click', (e) => {
+            e.stopPropagation();
+            providerCalendarPopover.style.display = 'none';
+          });
+        }
+
+        if (btnPopoverToday) {
+          btnPopoverToday.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const today = window.getDateOffset(0);
+            window.store.setSelectedDate(today);
+            this.updateDateDisplay();
+            providerCalendarPopover.style.display = 'none';
+          });
+        }
+
+        document.addEventListener('click', (e) => {
+          if (providerCalendarPopover.style.display !== 'none' && !providerCalendarPopover.contains(e.target) && !btnOpenDatePicker.contains(e.target)) {
+            providerCalendarPopover.style.display = 'none';
+          }
+        });
+      }
+
       const btnToday = document.getElementById('btnToday');
       if (btnToday) {
         btnToday.addEventListener('click', () => {
           const today = window.getDateOffset(0);
           window.store.setSelectedDate(today);
           this.updateDateDisplay();
+          if (providerCalendarPopover) providerCalendarPopover.style.display = 'none';
         });
       }
 
@@ -128,6 +170,7 @@
         this.updateDateDisplay();
         this.updateProviderKpiBar();
       });
+      window.store.subscribe('view_changed', (view) => this.updateViewSwitcherActive(view));
     }
 
     // ========================================================
@@ -515,9 +558,39 @@
         ${(p.workers || []).map(w => `<option value="${w.id}">${w.name} (${w.title})</option>`).join('')}
       `;
 
-      // Set target date (default to today or tomorrow)
+      // Set target date with Month Calendar Widget
+      const defaultDate = window.getDateOffset(0);
       const dateInput = document.getElementById('custSlotDateInput');
-      dateInput.value = window.getDateOffset(0);
+      dateInput.value = defaultDate;
+
+      const dateLabel = document.getElementById('custSelectedDateLabel');
+      if (dateLabel) {
+        dateLabel.textContent = window.formatReadableDate ? window.formatReadableDate(defaultDate) : defaultDate;
+      }
+
+      // Initialize the visual month calendar
+      const calMount = document.getElementById('custBookingCalendarMount');
+      if (calMount && window.MonthCalendarWidget) {
+        this.custBookingCalendar = new window.MonthCalendarWidget({
+          container: calMount,
+          selectedDate: defaultDate,
+          minDate: defaultDate,
+          getDayMeta: (dateStr) => {
+            const dayBookings = window.store.getBookingsForDateAndProvider(dateStr, p.id);
+            return {
+              hasBookings: dayBookings.length > 0,
+              isAvailable: true
+            };
+          },
+          onSelect: (dateStr) => {
+            dateInput.value = dateStr;
+            if (dateLabel) {
+              dateLabel.textContent = window.formatReadableDate ? window.formatReadableDate(dateStr) : dateStr;
+            }
+            this.onSlotServiceOrDateChange();
+          }
+        });
+      }
 
       this.onSlotServiceOrDateChange();
       this.openModal('customerSlotModal');
@@ -672,7 +745,30 @@
         ${(p.workers || []).map(w => `<option value="${w.id}">${w.name}</option>`).join('')}
       `;
 
-      document.getElementById('cwDateInput').value = window.getDateOffset(0);
+      const defaultDate = window.getDateOffset(0);
+      const cwDateInput = document.getElementById('cwDateInput');
+      cwDateInput.value = defaultDate;
+
+      const cwDateLabel = document.getElementById('cwSelectedDateLabel');
+      if (cwDateLabel) {
+        cwDateLabel.textContent = window.formatReadableDate ? window.formatReadableDate(defaultDate) : defaultDate;
+      }
+
+      const cwCalMount = document.getElementById('cwCalendarMount');
+      if (cwCalMount && window.MonthCalendarWidget) {
+        new window.MonthCalendarWidget({
+          container: cwCalMount,
+          selectedDate: defaultDate,
+          minDate: defaultDate,
+          onSelect: (dateStr) => {
+            cwDateInput.value = dateStr;
+            if (cwDateLabel) {
+              cwDateLabel.textContent = window.formatReadableDate ? window.formatReadableDate(dateStr) : dateStr;
+            }
+          }
+        });
+      }
+
       this.openModal('customerWaitlistModal');
     }
 
@@ -895,6 +991,43 @@
 
       if (dateText) dateText.textContent = `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
       if (dateSub) dateSub.textContent = dateStr === todayStr ? 'Today' : (dateStr > todayStr ? 'Upcoming' : 'Past');
+    }
+
+    updateViewSwitcherActive(view) {
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        if (btn.getAttribute('data-view') === view) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+    }
+
+    renderProviderMiniCalendar() {
+      const mount = document.getElementById('providerMiniCalMount');
+      if (!mount || !window.MonthCalendarWidget) return;
+      const curDate = window.store.getSelectedDate();
+      const provider = window.store.getCurrentProvider();
+      const provId = provider ? provider.id : null;
+
+      this.providerMiniCal = new window.MonthCalendarWidget({
+        container: mount,
+        selectedDate: curDate,
+        getDayMeta: (dateStr) => {
+          if (!provId) return null;
+          const bookings = window.store.getBookings().filter(b => b.date === dateStr && b.providerId === provId);
+          return {
+            hasBookings: bookings.length > 0,
+            bookingsCount: bookings.length
+          };
+        },
+        onSelect: (dateStr) => {
+          window.store.setSelectedDate(dateStr);
+          this.updateDateDisplay();
+          const popover = document.getElementById('providerCalendarPopover');
+          if (popover) popover.style.display = 'none';
+        }
+      });
     }
 
     shiftDate(deltaDays) {

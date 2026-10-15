@@ -39,6 +39,8 @@
 
       if (view === 'timeline') {
         this.renderTimelineView();
+      } else if (view === 'month') {
+        this.renderMonthView();
       } else if (view === 'week') {
         this.renderWeekView();
       } else if (view === 'day') {
@@ -366,6 +368,147 @@
       `;
     }
 
+    renderMonthView() {
+      const provider = window.store.getCurrentProvider();
+      if (!provider) {
+        this.renderTimelineView();
+        return;
+      }
+
+      const selectedDate = window.store.getSelectedDate();
+      const [curYear, curMonth] = selectedDate.split('-').map(Number);
+      const viewYear = isNaN(curYear) ? new Date().getFullYear() : curYear;
+      const viewMonth = isNaN(curMonth) ? new Date().getMonth() : curMonth - 1;
+
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const todayStr = window.getDateOffset(0);
+
+      const allBookings = window.store.getBookings().filter(b => b.providerId === provider.id);
+
+      const firstDay = new Date(viewYear, viewMonth, 1);
+      let startDay = (firstDay.getDay() + 6) % 7; // Monday = 0
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+
+      let daysHtml = '';
+
+      // Trailing days from previous month
+      for (let i = startDay - 1; i >= 0; i--) {
+        const dNum = daysInPrevMonth - i;
+        const pM = viewMonth === 0 ? 11 : viewMonth - 1;
+        const pY = viewMonth === 0 ? viewYear - 1 : viewYear;
+        const dStr = `${pY}-${String(pM + 1).padStart(2, '0')}-${String(dNum).padStart(2, '0')}`;
+        daysHtml += `
+          <div class="month-view-cell is-other-month" data-date="${dStr}" onclick="window.calendarController.selectMonthDay('${dStr}')">
+            <div class="month-cell-header">
+              <span class="month-cell-num">${dNum}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Days in active month
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isToday = dStr === todayStr;
+        const isSelected = dStr === selectedDate;
+        const dayBookings = allBookings.filter(b => b.date === dStr);
+
+        daysHtml += `
+          <div class="month-view-cell ${isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''}" 
+               data-date="${dStr}"
+               onclick="window.calendarController.selectMonthDay('${dStr}')">
+            <div class="month-cell-header">
+              <span class="month-cell-num ${isToday ? 'today-badge' : ''}">${d}</span>
+              ${dayBookings.length > 0 ? `<span class="month-cell-count">${dayBookings.length} booked</span>` : ''}
+            </div>
+            <div class="month-cell-events">
+              ${dayBookings.slice(0, 3).map(b => `
+                <div class="month-app-chip status-${b.status || 'confirmed'}" 
+                     onclick="event.stopPropagation(); window.app.openAppointmentDrawer('${b.bookingId}')"
+                     title="${b.time} - ${b.customerName} (${b.serviceName})">
+                  <span class="chip-time">${b.time}</span>
+                  <span class="chip-name">${b.customerName}</span>
+                </div>
+              `).join('')}
+              ${dayBookings.length > 3 ? `
+                <div class="month-more-chip" onclick="event.stopPropagation(); window.calendarController.zoomToDay('${dStr}')">
+                  +${dayBookings.length - 3} more
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }
+
+      // Leading days from next month
+      const totalCells = startDay + daysInMonth;
+      const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (let d = 1; d <= remaining; d++) {
+        const nM = viewMonth === 11 ? 0 : viewMonth + 1;
+        const nY = viewMonth === 11 ? viewYear + 1 : viewYear;
+        const dStr = `${nY}-${String(nM + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        daysHtml += `
+          <div class="month-view-cell is-other-month" data-date="${dStr}" onclick="window.calendarController.selectMonthDay('${dStr}')">
+            <div class="month-cell-header">
+              <span class="month-cell-num">${d}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      this.container.innerHTML = `
+        <div class="provider-month-view-container">
+          <div class="month-view-top-toolbar">
+            <div class="month-view-nav-title">
+              <button class="nav-arrow-btn" onclick="window.calendarController.shiftMonth(-1)" title="Previous Month">◀</button>
+              <h2 class="month-title-text">${monthNames[viewMonth]} ${viewYear}</h2>
+              <button class="nav-arrow-btn" onclick="window.calendarController.shiftMonth(1)" title="Next Month">▶</button>
+              <button class="btn-today" style="margin-left: 8px;" onclick="window.calendarController.goToCurrentMonth()">This Month</button>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-secondary" onclick="window.store.setView('timeline')">⏱ Switch to Timeline</button>
+              <button class="btn-primary" onclick="window.app.openNewBookingModal()">+ New Appointment</button>
+            </div>
+          </div>
+
+          <div class="month-view-weekdays-row">
+            ${weekdays.map(w => `<div class="month-weekday-head">${w}</div>`).join('')}
+          </div>
+
+          <div class="month-view-grid">
+            ${daysHtml}
+          </div>
+        </div>
+      `;
+    }
+
+    selectMonthDay(dateStr) {
+      window.store.setSelectedDate(dateStr);
+      this.render();
+    }
+
+    zoomToDay(dateStr) {
+      window.store.setSelectedDate(dateStr);
+      window.store.setView('timeline');
+    }
+
+    shiftMonth(delta) {
+      const curStr = window.store.getSelectedDate();
+      const [y, m, d] = curStr.split('-').map(Number);
+      const newDate = new Date(y, m - 1 + delta, Math.min(d, 28));
+      window.store.setSelectedDate(newDate.toISOString().split('T')[0]);
+    }
+
+    goToCurrentMonth() {
+      const today = window.getDateOffset(0);
+      window.store.setSelectedDate(today);
+    }
+
     renderDayView() {
       // Day view renders focused timeline
       this.renderTimelineView();
@@ -436,5 +579,184 @@
     }
   }
 
+  /**
+   * Reusable Month Calendar Widget
+   * Generates interactive full-month calendar matrices with:
+   * - Month & Year header with prev/next navigation
+   * - Weekday labels (Mo Tu We Th Fr Sa Su)
+   * - Full 35-42 day grid with proper offset and trailing days
+   * - Selected day indicator, today badge, disabled past days
+   * - Status dot indicators for bookings or availability
+   */
+  class MonthCalendarWidget {
+    constructor(options = {}) {
+      this.container = options.container;
+      this.selectedDate = options.selectedDate || (window.getDateOffset ? window.getDateOffset(0) : new Date().toISOString().split('T')[0]);
+      this.minDate = options.minDate || null;
+      this.maxDate = options.maxDate || null;
+      this.onSelect = options.onSelect || (() => {});
+      this.getDayMeta = options.getDayMeta || null;
+
+      const [y, m] = this.selectedDate.split('-').map(Number);
+      this.viewYear = isNaN(y) ? new Date().getFullYear() : y;
+      this.viewMonth = isNaN(m) ? new Date().getMonth() : m - 1;
+
+      this.render();
+    }
+
+    setDate(dateStr) {
+      if (!dateStr) return;
+      this.selectedDate = dateStr;
+      const [y, m] = dateStr.split('-').map(Number);
+      if (!isNaN(y) && !isNaN(m)) {
+        this.viewYear = y;
+        this.viewMonth = m - 1;
+      }
+      this.render();
+    }
+
+    prevMonth() {
+      this.viewMonth--;
+      if (this.viewMonth < 0) {
+        this.viewMonth = 11;
+        this.viewYear--;
+      }
+      this.render();
+    }
+
+    nextMonth() {
+      this.viewMonth++;
+      if (this.viewMonth > 11) {
+        this.viewMonth = 0;
+        this.viewYear++;
+      }
+      this.render();
+    }
+
+    goToToday() {
+      const today = window.getDateOffset ? window.getDateOffset(0) : new Date().toISOString().split('T')[0];
+      this.setDate(today);
+      this.onSelect(today);
+    }
+
+    render() {
+      if (!this.container) return;
+      const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+      ];
+      const weekdays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+      const todayStr = window.getDateOffset ? window.getDateOffset(0) : new Date().toISOString().split('T')[0];
+
+      const firstDay = new Date(this.viewYear, this.viewMonth, 1);
+      let startDay = (firstDay.getDay() + 6) % 7;
+      const daysInMonth = new Date(this.viewYear, this.viewMonth + 1, 0).getDate();
+      const daysInPrevMonth = new Date(this.viewYear, this.viewMonth, 0).getDate();
+
+      let daysHtml = '';
+
+      // Prev month trailing days
+      for (let i = startDay - 1; i >= 0; i--) {
+        const prevD = daysInPrevMonth - i;
+        const prevMonthIdx = this.viewMonth === 0 ? 11 : this.viewMonth - 1;
+        const prevYearVal = this.viewMonth === 0 ? this.viewYear - 1 : this.viewYear;
+        const dStr = `${prevYearVal}-${String(prevMonthIdx + 1).padStart(2, '0')}-${String(prevD).padStart(2, '0')}`;
+        const isPast = this.minDate && dStr < this.minDate;
+        daysHtml += `
+          <button type="button" class="cal-day-cell is-other-month ${isPast ? 'is-disabled' : ''}" data-date="${dStr}" ${isPast ? 'disabled' : ''}>
+            <span class="cal-day-num">${prevD}</span>
+          </button>
+        `;
+      }
+
+      // Current month days
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dStr = `${this.viewYear}-${String(this.viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isToday = dStr === todayStr;
+        const isSelected = dStr === this.selectedDate;
+        const isPast = this.minDate && dStr < this.minDate;
+        const meta = this.getDayMeta ? this.getDayMeta(dStr) : null;
+
+        let indicatorHtml = '';
+        if (meta && meta.hasBookings) {
+          indicatorHtml = `<span class="cal-dot-indicator booking-dot" title="${meta.bookingsCount || 1} appointment(s)"></span>`;
+        } else if (meta && meta.isAvailable) {
+          indicatorHtml = `<span class="cal-dot-indicator available-dot" title="Slots Available"></span>`;
+        }
+
+        daysHtml += `
+          <button type="button" 
+                  class="cal-day-cell ${isToday ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''} ${isPast ? 'is-disabled' : ''}" 
+                  data-date="${dStr}"
+                  ${isPast ? 'disabled' : ''}>
+            <span class="cal-day-num">${d}</span>
+            ${indicatorHtml}
+          </button>
+        `;
+      }
+
+      // Next month leading days
+      const totalCells = startDay + daysInMonth;
+      const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+      for (let d = 1; d <= remaining; d++) {
+        const nextMonthIdx = this.viewMonth === 11 ? 0 : this.viewMonth + 1;
+        const nextYearVal = this.viewMonth === 11 ? this.viewYear + 1 : this.viewYear;
+        const dStr = `${nextYearVal}-${String(nextMonthIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isPast = this.minDate && dStr < this.minDate;
+        daysHtml += `
+          <button type="button" class="cal-day-cell is-other-month ${isPast ? 'is-disabled' : ''}" data-date="${dStr}" ${isPast ? 'disabled' : ''}>
+            <span class="cal-day-num">${d}</span>
+          </button>
+        `;
+      }
+
+      this.container.innerHTML = `
+        <div class="cal-widget">
+          <div class="cal-widget-header">
+            <div class="cal-header-title">
+              <span class="cal-month-name">${monthNames[this.viewMonth]}</span>
+              <span class="cal-year-num">${this.viewYear}</span>
+            </div>
+            <div class="cal-nav-actions">
+              <button type="button" class="cal-nav-btn btn-cal-prev" title="Previous Month">◀</button>
+              <button type="button" class="cal-nav-today-btn btn-cal-today">Today</button>
+              <button type="button" class="cal-nav-btn btn-cal-next" title="Next Month">▶</button>
+            </div>
+          </div>
+          <div class="cal-widget-weekdays">
+            ${weekdays.map(w => `<span class="cal-weekday-label">${w}</span>`).join('')}
+          </div>
+          <div class="cal-widget-grid">
+            ${daysHtml}
+          </div>
+        </div>
+      `;
+
+      // Attach listeners
+      const prevBtn = this.container.querySelector('.btn-cal-prev');
+      if (prevBtn) prevBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); this.prevMonth(); });
+
+      const nextBtn = this.container.querySelector('.btn-cal-next');
+      if (nextBtn) nextBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); this.nextMonth(); });
+
+      const todayBtn = this.container.querySelector('.btn-cal-today');
+      if (todayBtn) todayBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); this.goToToday(); });
+
+      this.container.querySelectorAll('.cal-day-cell:not(.is-disabled)').forEach(cell => {
+        cell.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const dateStr = cell.getAttribute('data-date');
+          if (!dateStr) return;
+          this.selectedDate = dateStr;
+          this.container.querySelectorAll('.cal-day-cell').forEach(c => c.classList.remove('is-selected'));
+          cell.classList.add('is-selected');
+          this.onSelect(dateStr);
+        });
+      });
+    }
+  }
+
   window.calendarController = new CalendarController();
+  window.MonthCalendarWidget = MonthCalendarWidget;
 })();

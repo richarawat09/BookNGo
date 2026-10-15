@@ -10,6 +10,16 @@ function getDateOffset(days) {
   return d.toISOString().split('T')[0];
 }
 
+// Helper to format date string (YYYY-MM-DD) into readable text (e.g., Thu, Oct 15, 2026)
+function formatReadableDate(dateStr) {
+  if (!dateStr) return '';
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${days[dateObj.getDay()]}, ${months[dateObj.getMonth()]} ${d}, ${y}`;
+}
+
 const INITIAL_CATEGORIES = [
   { id: 'cat-beauty', name: 'Beauty & Wellness', icon: '🌸', description: 'Skincare, makeup, and aesthetic wellness' },
   { id: 'cat-salon', name: 'Salons & Spas', icon: '💇', description: 'Hair styling, coloring, manicures, and massages' },
@@ -75,4 +85,5 @@ if (typeof window !== 'undefined') {
   window.INITIAL_REPORTS = INITIAL_REPORTS;
   window.SAMPLE_BLUSH_STUDIO = SAMPLE_BLUSH_STUDIO;
   window.getDateOffset = getDateOffset;
+  window.formatReadableDate = formatReadableDate;
 }
