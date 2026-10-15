@@ -880,7 +880,7 @@ input:focus, select:focus, textarea:focus {
   left: 0;
   right: 0;
   height: 2px;
-  background: #EF4444;
+  background: var(--primary-500);
   z-index: 12;
   pointer-events: none;
   display: flex;
@@ -894,8 +894,8 @@ input:focus, select:focus, textarea:focus {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #EF4444;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  background: var(--primary-500);
+  box-shadow: 0 0 10px var(--primary-glow);
 }
 
 /* Appointment Card in Timeline Grid */
@@ -1959,23 +1959,26 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 14px;
+  padding: 8px 16px;
   border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;
-  background: var(--bg-surface-alt);
-  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+  border: 1.5px solid var(--border-light);
   color: var(--text-muted);
   white-space: nowrap;
+  transition: all var(--transition-fast);
 }
 .category-pill-btn:hover {
   border-color: var(--border-focus);
-  color: var(--text-main);
+  color: var(--primary-600);
+  background: #FFF0F6;
 }
 .category-pill-btn.active {
-  background: var(--primary-600);
+  background: var(--primary-gradient);
   color: #fff;
-  border-color: var(--primary-600);
+  border-color: transparent;
+  box-shadow: 0 4px 12px var(--primary-glow);
 }
 
 /* Provider & Service Marketplace Cards */
@@ -2017,13 +2020,14 @@ input:focus, select:focus, textarea:focus {
   position: absolute;
   top: 12px;
   left: 12px;
-  background: rgba(15, 23, 42, 0.75);
+  background: rgba(230, 0, 100, 0.88);
   backdrop-filter: blur(4px);
   color: #fff;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--radius-full);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .provider-card-content {
@@ -2219,7 +2223,9 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: var(--bg-page);
+  background: radial-gradient(circle at 12% 18%, #FFD1E3 0%, transparent 45%),
+              radial-gradient(circle at 88% 82%, #FFBAD4 0%, transparent 45%),
+              var(--bg-page);
   min-height: 100vh;
 }
 
@@ -2227,9 +2233,9 @@ input:focus, select:focus, textarea:focus {
   width: 100%;
   max-width: 440px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-light);
+  border: 2px solid var(--border-light);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 20px 45px rgba(255, 31, 125, 0.16), 0 4px 14px rgba(255, 184, 214, 0.35);
   padding: 36px 32px;
   display: flex;
   flex-direction: column;
@@ -2263,7 +2269,7 @@ input:focus, select:focus, textarea:focus {
   background: var(--bg-surface-alt);
   padding: 5px;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-light);
 }
 
 .simple-role-btn {
@@ -2287,15 +2293,15 @@ input:focus, select:focus, textarea:focus {
 }
 
 .simple-role-btn.active {
-  background: var(--bg-surface);
-  color: var(--primary-600);
-  box-shadow: 0 2px 6px rgba(244, 63, 122, 0.15);
+  background: var(--primary-gradient);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px var(--primary-glow);
   font-weight: 700;
 }
 
 [data-theme="dark"] .simple-role-btn.active {
-  color: var(--primary-400);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+  color: #FFFFFF;
+  box-shadow: 0 4px 12px var(--primary-glow);
 }
 
 /* Auth Mode Tabs (Sign In / Create Account) */
@@ -2344,8 +2350,9 @@ input:focus, select:focus, textarea:focus {
 /* Simple Navbar */
 .simple-navbar {
   height: 64px;
-  background: var(--bg-surface);
-  border-bottom: 1px solid var(--border-light);
+  background: rgba(255, 240, 245, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1.5px solid var(--border-light);
   padding: 0 32px;
   display: flex;
   align-items: center;
@@ -2368,12 +2375,13 @@ input:focus, select:focus, textarea:focus {
   color: var(--text-main);
 }
 .simple-tab-btn.active {
-  background: var(--primary-50);
-  color: var(--primary-600);
+  background: var(--primary-gradient);
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px var(--primary-glow);
 }
 [data-theme="dark"] .simple-tab-btn.active {
-  background: rgba(244, 63, 122, 0.16);
-  color: var(--primary-400);
+  background: var(--primary-gradient);
+  color: #FFFFFF;
 }
 
 /* Simple Search & Filter */
@@ -2382,14 +2390,14 @@ input:focus, select:focus, textarea:focus {
   align-items: center;
   gap: 12px;
   background: var(--bg-surface);
-  border: 1px solid var(--border-light);
+  border: 2px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: 6px 18px;
-  box-shadow: var(--shadow-xs);
+  box-shadow: 0 4px 14px rgba(255, 31, 125, 0.08);
 }
 .simple-search-wrap:focus-within {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--primary-glow);
+  box-shadow: 0 0 0 3px var(--primary-focus);
 }
 
 .simple-search-input {
