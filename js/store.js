@@ -108,24 +108,25 @@
         };
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
         this.emit('session_changed', session);
-        return session;
+        return { success: true, session };
       }
 
       if (role === 'customer') {
         const customers = this.getCustomers();
-        let matched = customers.find(c => (c.email || '').toLowerCase() === cleanEmail);
+        const matched = customers.find(c => (c.email || '').toLowerCase() === cleanEmail);
         if (!matched) {
-          // Register as customer automatically
-          matched = {
-            id: 'cust-' + Date.now().toString(36),
-            name: cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-            email: cleanEmail,
-            phone: '+1 (555) 789-0011',
-            role: 'customer',
-            joinedDate: new Date().toISOString().split('T')[0],
-            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
+          return {
+            success: false,
+            error: 'NO_ACCOUNT',
+            message: `No customer account found for "${cleanEmail}". Please click "Create Account" to register.`
           };
-          this.addCustomer(matched);
+        }
+        if (matched.password && password && matched.password !== password) {
+          return {
+            success: false,
+            error: 'INVALID_PASSWORD',
+            message: 'Incorrect password for this account. Please try again.'
+          };
         }
 
         const session = {
@@ -135,58 +136,67 @@
           customerId: matched.id,
           name: matched.name,
           email: matched.email,
-          phone: matched.phone,
+          phone: matched.phone || '',
           avatar: matched.avatar
         };
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
         this.emit('session_changed', session);
-        return session;
+        return { success: true, session };
       }
 
       if (role === 'provider') {
         return this.loginAsProvider(cleanEmail, password);
       }
 
-      return null;
+      return { success: false, message: 'Invalid role.' };
     }
 
     registerCustomer({ name, email, phone, password }) {
       const cleanEmail = (email || '').trim().toLowerCase();
       const customers = this.getCustomers();
-      let customer = customers.find(c => c.email.toLowerCase() === cleanEmail);
-      if (!customer) {
-        customer = {
-          id: 'cust-' + Date.now().toString(36),
-          name: name || cleanEmail.split('@')[0],
-          email: cleanEmail,
-          phone: phone || '+1 (555) 000-0000',
-          role: 'customer',
-          joinedDate: new Date().toISOString().split('T')[0],
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
+      const existing = customers.find(c => (c.email || '').toLowerCase() === cleanEmail);
+      if (existing) {
+        return {
+          success: false,
+          error: 'EXISTS',
+          message: `An account with "${cleanEmail}" already exists. Please Sign In.`
         };
-        this.addCustomer(customer);
       }
+
+      const newCustomer = {
+        id: 'cust-' + Date.now().toString(36),
+        name: name || cleanEmail.split('@')[0],
+        email: cleanEmail,
+        password: password,
+        phone: phone || '+1 (555) 000-0000',
+        role: 'customer',
+        joinedDate: new Date().toISOString().split('T')[0],
+        avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
+      };
+      this.addCustomer(newCustomer);
+
       return this.login('customer', cleanEmail, password);
     }
 
     loginAsProvider(email, password) {
       const providers = this.getProviders();
       const cleanEmail = (email || '').trim().toLowerCase();
-      let matched = providers.find(p => (p.email || '').toLowerCase() === cleanEmail);
+      const matched = providers.find(p => (p.email || '').toLowerCase() === cleanEmail);
 
-      // If provider not found by exact email, allow logging into first matching or create new
       if (!matched) {
-        matched = providers.find(p => (p.name || '').toLowerCase().includes(cleanEmail.split('@')[0]));
+        return {
+          success: false,
+          error: 'NO_ACCOUNT',
+          message: `No registered business found for "${cleanEmail}". Please switch to "Create Account" to register.`
+        };
       }
 
-      if (!matched) {
-        // Automatically create business account for this provider
-        matched = this.registerProviderBusiness({
-          name: cleanEmail.split('@')[0].replace(/[._-]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) + ' Studio',
-          email: cleanEmail,
-          category: 'Salons & Spas',
-          location: 'Main Center'
-        });
+      if (matched.password && password && matched.password !== password) {
+        return {
+          success: false,
+          error: 'INVALID_PASSWORD',
+          message: 'Incorrect password for this business account. Please try again.'
+        };
       }
 
       const session = {
@@ -202,7 +212,7 @@
       localStorage.setItem(STORAGE_KEYS.SELECTED_PROVIDER, matched.id);
       this.emit('session_changed', session);
       this.emit('provider_changed', matched);
-      return session;
+      return { success: true, session, provider: matched };
     }
 
     logout() {
@@ -220,17 +230,30 @@
 
     registerProviderBusiness(businessData) {
       const providers = this.getProviders();
+      const cleanEmail = (businessData.email || '').trim().toLowerCase();
+      const existing = providers.find(p => (p.email || '').toLowerCase() === cleanEmail);
+      if (existing) {
+        return {
+          success: false,
+          error: 'EXISTS',
+          message: `A business with "${cleanEmail}" is already registered. Please Sign In.`
+        };
+      }
+
       const newId = 'prov-' + Date.now().toString(36);
+      const ownerName = businessData.ownerName || businessData.name.split(' ')[0];
       const newProvider = {
         id: newId,
         name: businessData.name || 'My Booking Business',
         category: businessData.category || 'Salons & Spas',
+        categoryId: 'cat-' + (businessData.category || 'other').toLowerCase().replace(/[^a-z0-9]/g, '-'),
         tagline: businessData.tagline || 'Professional appointments & scheduling',
         description: businessData.description || 'Welcome to our booking service.',
         location: businessData.location || 'Downtown',
         address: businessData.address || '101 Commercial Ave',
         phone: businessData.phone || '+1 (555) 000-1122',
-        email: businessData.email || 'business@bookngo.com',
+        email: cleanEmail,
+        password: businessData.password,
         image: businessData.image || 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80',
         rating: 5.0,
         reviewCount: 0,
@@ -244,16 +267,27 @@
           { id: 'srv-' + newId + '-2', name: 'Premium Service Session', category: 'Premium', price: 95, duration: 60, description: 'Extended full service treatment', enabled: true }
         ],
         workers: businessData.workers && businessData.workers.length > 0 ? businessData.workers : [
-          { id: 'wrk-' + newId + '-1', name: businessData.name.split(' ')[0] + ' (Owner)', title: 'Lead Specialist', services: ['srv-' + newId + '-1', 'srv-' + newId + '-2'], workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], isUnavailable: false }
+          { id: 'wrk-' + newId + '-1', name: ownerName + ' (Lead)', title: 'Lead Specialist', services: ['srv-' + newId + '-1', 'srv-' + newId + '-2'], workingDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], isUnavailable: false }
         ]
       };
 
       providers.push(newProvider);
       localStorage.setItem(STORAGE_KEYS.PROVIDERS, JSON.stringify(providers));
 
-      // Also set as active provider
-      this.loginAsProvider(newProvider.email);
-      return newProvider;
+      const session = {
+        isLoggedIn: true,
+        role: 'provider',
+        id: newProvider.id,
+        providerId: newProvider.id,
+        email: newProvider.email,
+        name: newProvider.name
+      };
+
+      localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
+      localStorage.setItem(STORAGE_KEYS.SELECTED_PROVIDER, newProvider.id);
+      this.emit('session_changed', session);
+      this.emit('provider_changed', newProvider);
+      return { success: true, session, provider: newProvider };
     }
 
     // Pub-Sub Event System

@@ -271,43 +271,52 @@
       }
 
       if (this.currentAuthRole === 'admin') {
-        window.store.login('admin', email, password);
-        this.showToast('Logged in to Admin Management Portal', 'success');
+        const res = window.store.login('admin', email, password);
+        if (res && res.success) {
+          this.showToast('Logged in to Admin Management Portal', 'success');
+        }
         return;
       }
 
       if (this.currentAuthMode === 'signup') {
         if (this.currentAuthRole === 'customer') {
-          window.store.registerCustomer({ name, email, password });
-          this.showToast(`Welcome ${name}! Your customer account is ready.`, 'success');
+          const res = window.store.registerCustomer({ name, email, password });
+          if (!res.success) {
+            this.showToast(res.message, 'error');
+            if (res.error === 'EXISTS') this.switchAuthMode('signin');
+            return;
+          }
+          this.showToast(`Account created for ${name}! Saved permanently for future logins.`, 'success');
         } else if (this.currentAuthRole === 'provider') {
           const bizNameInput = document.getElementById('authBizNameInput');
           const bizCatInput = document.getElementById('authBizCatInput');
           const bizName = bizNameInput?.value?.trim() || `${name}'s Studio`;
           const category = bizCatInput?.value || 'Salons & Spas';
-          window.store.registerProviderBusiness({
+          const res = window.store.registerProviderBusiness({
             name: bizName,
             category,
             ownerName: name,
             email,
             password
           });
-          this.showToast(`Congratulations! "${bizName}" is now registered.`, 'success');
+          if (!res.success) {
+            this.showToast(res.message, 'error');
+            if (res.error === 'EXISTS') this.switchAuthMode('signin');
+            return;
+          }
+          this.showToast(`Business "${bizName}" registered! Saved permanently for future logins.`, 'success');
         }
       } else {
         // Sign In
-        if (this.currentAuthRole === 'provider') {
-          const providers = window.store.getProviders();
-          const existing = providers.find(p => (p.email || '').toLowerCase() === email.toLowerCase());
-          if (!existing) {
-            // Switch to registration mode
+        const res = window.store.login(this.currentAuthRole, email, password);
+        if (!res.success) {
+          this.showToast(res.message, 'error');
+          if (res.error === 'NO_ACCOUNT') {
             this.switchAuthMode('signup');
-            this.showToast('No business registered under this email yet. Please register your business below.', 'info');
-            return;
           }
+          return;
         }
-        window.store.login(this.currentAuthRole, email, password);
-        this.showToast(`Signed in successfully as ${email}`, 'success');
+        this.showToast(`Welcome back, ${res.session.name || email}!`, 'success');
       }
     }
 
