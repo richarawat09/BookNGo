@@ -416,7 +416,7 @@
             <div class="booking-calendar-wrapper">
               <div id="custBookingCalendarMount"></div>
             </div>
-            <input type="hidden" id="custSlotDateInput" required>
+            <input type="hidden" id="custSlotDateInput">
           </div>
 
           <div>
@@ -425,7 +425,7 @@
               <span style="font-size: 11px; color: var(--text-muted);" id="custSlotCountHint">Select time below</span>
             </div>
             <div id="custAvailableSlotsMount"></div>
-            <input type="hidden" id="custSelectedTimeInput" required>
+            <input type="hidden" id="custSelectedTimeInput">
           </div>
 
           <div class="form-group">
@@ -439,7 +439,7 @@
           </button>
           <div style="display: flex; gap: 8px;">
             <button type="button" class="btn-secondary" onclick="window.app.closeModal('customerSlotModal')">Cancel</button>
-            <button type="submit" class="btn-primary" id="custConfirmBookingBtn" disabled>Confirm Booking</button>
+            <button type="button" class="btn-primary" id="custConfirmBookingBtn" onclick="window.app.submitCustomerSlotBooking(event)">Confirm Booking</button>
           </div>
         </div>
       </form>
@@ -453,7 +453,7 @@
         <h3 class="modal-title">Join Live Standby Waitlist</h3>
         <button class="modal-close-btn" onclick="window.app.closeModal('customerWaitlistModal')">✕</button>
       </div>
-      <form onsubmit="window.app.submitCustomerWaitlist(event)">
+      <form onsubmit="event.preventDefault(); window.app.submitCustomerWaitlist(event)">
         <div class="modal-body">
           <p style="font-size: 12px; color: var(--text-muted);">
             If an appointment cancels, we'll notify you immediately via SMS to claim the slot!
@@ -463,6 +463,10 @@
             <select id="cwServiceSelect" class="form-select" required></select>
           </div>
           <div class="form-group">
+            <label class="form-label">Preferred Specialist</label>
+            <select id="cwWorkerSelect" class="form-select"></select>
+          </div>
+          <div class="form-group">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
               <label class="form-label" style="margin-bottom: 0;">📅 Preferred Date</label>
               <span class="cal-selected-pill" id="cwSelectedDateLabel">Select a day</span>
@@ -470,7 +474,7 @@
             <div class="booking-calendar-wrapper">
               <div id="cwCalendarMount"></div>
             </div>
-            <input type="hidden" id="cwDateInput" required>
+            <input type="hidden" id="cwDateInput">
           </div>
           <div class="form-group">
             <label class="form-label">Time Window</label>
@@ -480,10 +484,22 @@
               <option value="Any Time Today">Any Time Today</option>
             </select>
           </div>
+          <div class="form-group">
+            <label class="form-label">Priority Level</label>
+            <select id="cwPrioritySelect" class="form-select">
+              <option value="vip">⭐ VIP Client Priority</option>
+              <option value="regular" selected>⚡ Standard Flexible</option>
+              <option value="urgent">🚨 Urgent Need Today</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes (Optional)</label>
+            <input type="text" id="cwNotesInput" class="form-input" placeholder="Any requests...">
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn-secondary" onclick="window.app.closeModal('customerWaitlistModal')">Cancel</button>
-          <button type="submit" class="btn-primary">Join Waitlist</button>
+          <button type="button" class="btn-primary" onclick="window.app.submitCustomerWaitlist(event)">Join Waitlist</button>
         </div>
       </form>
     </div>
@@ -638,11 +654,11 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Scripts -->
-  <script src="js/data.js?v=slot_confirm_fix_v2"></script>
-  <script src="js/api.js?v=slot_confirm_fix_v2"></script>
-  <script src="js/store.js?v=slot_confirm_fix_v2"></script>
-  <script src="js/calendar.js?v=slot_confirm_fix_v2"></script>
-  <script src="js/waitlist.js?v=slot_confirm_fix_v2"></script>
-  <script src="js/app.js?v=slot_confirm_fix_v2"></script>
+  <script src="js/data.js?v=cust_book_fix_v3"></script>
+  <script src="js/api.js?v=cust_book_fix_v3"></script>
+  <script src="js/store.js?v=cust_book_fix_v3"></script>
+  <script src="js/calendar.js?v=cust_book_fix_v3"></script>
+  <script src="js/waitlist.js?v=cust_book_fix_v3"></script>
+  <script src="js/app.js?v=cust_book_fix_v3"></script>
 </body>
 </html>

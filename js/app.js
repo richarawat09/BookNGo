@@ -574,13 +574,20 @@
       this.currentBookingProviderId = providerId;
       const providers = window.store.getProviders();
       const p = providers.find(item => item.id === providerId) || providers[0];
+      if (!p) {
+        this.showToast('Provider not found', 'error');
+        return;
+      }
 
       document.getElementById('slotModalProviderName').textContent = p.name;
-      document.getElementById('slotModalProviderLocation').textContent = `${p.location} • ${p.address}`;
+      document.getElementById('slotModalProviderLocation').textContent = `${p.location || 'Central'} • ${p.address || ''}`;
 
       // Populate services
       const srvSelect = document.getElementById('custSlotServiceSelect');
-      srvSelect.innerHTML = (p.services || []).map(s => `
+      const services = Array.isArray(p.services) && p.services.length > 0 ? p.services : [
+        { id: `srv-${p.id}-1`, name: 'Consultation', price: 50, duration: 45 }
+      ];
+      srvSelect.innerHTML = services.map(s => `
         <option value="${s.id}" data-duration="${s.duration}" data-price="${s.price}">
           ${s.name} — $${s.price} (${s.duration} mins)
         </option>
@@ -588,15 +595,20 @@
 
       // Populate specialists
       const wrkSelect = document.getElementById('custSlotWorkerSelect');
+      const workers = Array.isArray(p.workers) && p.workers.length > 0 ? p.workers : [{ id: null, name: 'Specialist' }];
       wrkSelect.innerHTML = `
         <option value="any">Any Available Specialist</option>
-        ${(p.workers || []).map(w => `<option value="${w.id}">${w.name} (${w.title})</option>`).join('')}
+        ${workers.map(w => `<option value="${w.id || ''}">${w.name} (${w.title || 'Staff'})</option>`).join('')}
       `;
+
+      // Clear previous notes
+      const notesInput = document.getElementById('custSlotNotesInput');
+      if (notesInput) notesInput.value = '';
 
       // Set target date with Month Calendar Widget
       const defaultDate = window.getDateOffset(0);
       const dateInput = document.getElementById('custSlotDateInput');
-      dateInput.value = defaultDate;
+      if (dateInput) dateInput.value = defaultDate;
 
       const dateLabel = document.getElementById('custSelectedDateLabel');
       if (dateLabel) {
@@ -618,7 +630,7 @@
             };
           },
           onSelect: (dateStr) => {
-            dateInput.value = dateStr;
+            if (dateInput) dateInput.value = dateStr;
             if (dateLabel) {
               dateLabel.textContent = window.formatReadableDate ? window.formatReadableDate(dateStr) : dateStr;
             }
@@ -636,28 +648,34 @@
       const p = window.store.getProviders().find(item => item.id === providerId);
       if (!p) return;
 
-      const date = document.getElementById('custSlotDateInput').value;
+      const date = document.getElementById('custSlotDateInput')?.value || window.getDateOffset(0);
       const srvSelect = document.getElementById('custSlotServiceSelect');
-      const selectedOption = srvSelect.options[srvSelect.selectedIndex];
-      const duration = Number(selectedOption.getAttribute('data-duration')) || 45;
+      const selectedOption = srvSelect?.options?.[srvSelect.selectedIndex] || srvSelect?.options?.[0];
+      const duration = Number(selectedOption?.getAttribute('data-duration')) || 45;
 
-      const workerId = document.getElementById('custSlotWorkerSelect').value;
+      const wrkSelect = document.getElementById('custSlotWorkerSelect');
+      const workerId = wrkSelect ? wrkSelect.value : 'any';
       const bookings = window.store.getBookingsForDateAndProvider(date, p.id);
 
       // Generate intervals between openTime and closeTime
-      const [startHour, startMin] = p.openTime.split(':').map(Number);
-      const [endHour, endMin] = p.closeTime.split(':').map(Number);
-      const startTotal = startHour * 60 + startMin;
-      const endTotal = endHour * 60 + endMin;
+      const [startHour, startMin] = (p.openTime || '09:00').split(':').map(Number);
+      const [endHour, endMin] = (p.closeTime || '18:00').split(':').map(Number);
+      const startTotal = (isNaN(startHour) ? 9 : startHour) * 60 + (isNaN(startMin) ? 0 : startMin);
+      const endTotal = (isNaN(endHour) ? 18 : endHour) * 60 + (isNaN(endMin) ? 0 : endMin);
 
       const breaks = (p.breaks || []).map(b => {
-        const [sh, sm] = b.start.split(':').map(Number);
-        const [eh, em] = b.end.split(':').map(Number);
-        return { start: sh * 60 + sm, end: eh * 60 + em };
+        const [sh, sm] = (b.start || '13:00').split(':').map(Number);
+        const [eh, em] = (b.end || '14:00').split(':').map(Number);
+        return { start: (isNaN(sh) ? 13 : sh) * 60 + (isNaN(sm) ? 0 : sm), end: (isNaN(eh) ? 14 : eh) * 60 + (isNaN(em) ? 0 : em) };
       });
 
       const slotsMount = document.getElementById('custAvailableSlotsMount');
+      const countHint = document.getElementById('custSlotCountHint');
+      const confirmBtn = document.getElementById('custConfirmBookingBtn');
+      const timeInput = document.getElementById('custSelectedTimeInput');
       const slots = [];
+
+      const workers = Array.isArray(p.workers) && p.workers.length > 0 ? p.workers : [{ id: null, name: 'Specialist' }];
 
       for (let min = startTotal; min + duration <= endTotal; min += 30) {
         const hh = String(Math.floor(min / 60)).padStart(2, '0');
@@ -671,11 +689,11 @@
         // Worker conflicts
         let isBooked = false;
         if (workerId && workerId !== 'any') {
-          isBooked = bookings.some(b => b.workerId === workerId && b.time === timeStr);
+          isBooked = bookings.some(b => b.workerId === workerId && b.time === timeStr && b.status !== 'cancelled');
         } else {
           // If any worker, check if all workers are occupied
-          const occupiedCount = bookings.filter(b => b.time === timeStr).length;
-          isBooked = occupiedCount >= (p.workers || []).length;
+          const occupiedCount = bookings.filter(b => b.time === timeStr && b.status !== 'cancelled').length;
+          isBooked = occupiedCount >= workers.length;
         }
 
         if (!collidesBreak && !isBooked) {
@@ -683,79 +701,119 @@
         }
       }
 
-      this.selectedBookingSlotTime = null;
-      document.getElementById('custSelectedTimeInput').value = '';
-      document.getElementById('custConfirmBookingBtn').disabled = true;
-
       if (slots.length === 0) {
-        slotsMount.innerHTML = `
-          <div style="background: var(--warning-bg); border: 1px solid var(--warning-border); padding: 12px; border-radius: var(--radius-sm); font-size: 12px; color: var(--warning-text); text-align: center;">
-            ⚠️ All standard slots are booked on ${date}! You can join the live standby waitlist below.
-          </div>
-        `;
+        this.selectedBookingSlotTime = null;
+        if (timeInput) timeInput.value = '';
+        if (countHint) countHint.textContent = '0 slots available';
+        if (confirmBtn) {
+          confirmBtn.disabled = true;
+          confirmBtn.textContent = 'All Slots Booked Today';
+        }
+        if (slotsMount) {
+          slotsMount.innerHTML = `
+            <div style="background: var(--warning-bg); border: 1px solid var(--warning-border); padding: 12px; border-radius: var(--radius-sm); font-size: 12px; color: var(--warning-text); text-align: center;">
+              ⚠️ All standard slots are booked on ${date}! You can join the live standby waitlist below.
+            </div>
+          `;
+        }
         return;
       }
 
-      slotsMount.innerHTML = `
-        <div class="slot-badges-grid">
-          ${slots.map(t => `
-            <button type="button" class="slot-badge-btn" onclick="window.app.selectBookingSlotBadge('${t}', this)">
-              ${t}
-            </button>
-          `).join('')}
-        </div>
-      `;
+      // Automatically select first available slot
+      this.selectedBookingSlotTime = slots[0];
+      if (timeInput) timeInput.value = slots[0];
+      if (countHint) countHint.textContent = `${slots.length} available slots (tap to change)`;
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = `Confirm Booking (${slots[0]})`;
+      }
+
+      if (slotsMount) {
+        slotsMount.innerHTML = `
+          <div class="slot-badges-grid">
+            ${slots.map((t, idx) => `
+              <button type="button" class="slot-badge-btn ${idx === 0 ? 'selected' : ''}" onclick="window.app.selectBookingSlotBadge('${t}', this)">
+                ${t}
+              </button>
+            `).join('')}
+          </div>
+        `;
+      }
     }
 
     selectBookingSlotBadge(timeStr, btnElement) {
-      document.querySelectorAll('.slot-badge-btn').forEach(b => b.classList.remove('selected'));
-      btnElement.classList.add('selected');
+      document.querySelectorAll('#custAvailableSlotsMount .slot-badge-btn').forEach(b => b.classList.remove('selected'));
+      if (btnElement) btnElement.classList.add('selected');
       this.selectedBookingSlotTime = timeStr;
-      document.getElementById('custSelectedTimeInput').value = timeStr;
-      document.getElementById('custConfirmBookingBtn').disabled = false;
+      const timeInput = document.getElementById('custSelectedTimeInput');
+      if (timeInput) timeInput.value = timeStr;
+      const confirmBtn = document.getElementById('custConfirmBookingBtn');
+      if (confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = `Confirm Booking (${timeStr})`;
+      }
     }
 
     async submitCustomerSlotBooking(e) {
-      e.preventDefault();
+      if (e) {
+        e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+      }
+
       const session = window.store.getCurrentSession();
-      if (!session) {
-        this.showToast('Please sign in to book an appointment.', 'error');
+      if (!session || !session.isLoggedIn) {
+        this.showToast('Please sign in as a customer to book an appointment.', 'error');
+        this.openAuthModal('signin', 'customer');
         return;
       }
 
       const providerId = this.currentBookingProviderId;
       const provider = window.store.getProviders().find(p => p.id === providerId);
       if (!provider) {
-        this.showToast('Provider not found.', 'error');
+        this.showToast('Selected provider was not found.', 'error');
         return;
       }
 
       const srvSelect = document.getElementById('custSlotServiceSelect');
-      const serviceId = srvSelect.value;
-      const srvOption = srvSelect.options[srvSelect.selectedIndex];
-      const serviceName = srvOption.text.split('—')[0].trim();
-      const price = Number(srvOption.getAttribute('data-price')) || 50;
-      const duration = Number(srvOption.getAttribute('data-duration')) || 45;
+      const serviceId = srvSelect ? srvSelect.value : (provider.services?.[0]?.id || null);
+      const srvOption = srvSelect ? srvSelect.options[srvSelect.selectedIndex] : null;
+      const selectedService = (provider.services || []).find(s => s.id === serviceId) || provider.services?.[0];
+      const serviceName = selectedService?.name || (srvOption?.text ? srvOption.text.split('—')[0].trim() : 'Consultation');
+      const price = selectedService ? Number(selectedService.price) : (Number(srvOption?.getAttribute('data-price')) || 50);
+      const duration = selectedService ? Number(selectedService.duration) : (Number(srvOption?.getAttribute('data-duration')) || 45);
 
       const wrkSelect = document.getElementById('custSlotWorkerSelect');
-      const workerId = wrkSelect.value === 'any' ? (provider.workers[0]?.id || null) : wrkSelect.value;
-      const worker = provider.workers.find(w => w.id === workerId) || provider.workers[0] || { id: null, name: 'Specialist' };
+      const workers = Array.isArray(provider.workers) && provider.workers.length > 0 ? provider.workers : [{ id: null, name: 'Specialist' }];
+      const workerId = (wrkSelect && wrkSelect.value !== 'any') ? wrkSelect.value : (workers[0]?.id || null);
+      const worker = workers.find(w => w.id === workerId) || workers[0] || { id: null, name: 'Specialist' };
 
-      const date = document.getElementById('custSlotDateInput').value;
-      const time = this.selectedBookingSlotTime;
-      const notes = document.getElementById('custSlotNotesInput').value;
+      const date = document.getElementById('custSlotDateInput')?.value || window.getDateOffset(0);
+      const time = this.selectedBookingSlotTime || document.getElementById('custSelectedTimeInput')?.value;
+      const notes = document.getElementById('custSlotNotesInput')?.value || '';
 
       if (!time) {
-        this.showToast('Please select a time slot from the calendar.', 'error');
+        this.showToast('Please tap on an available time slot badge above.', 'warning');
         return;
       }
 
+      const confirmBtn = document.getElementById('custConfirmBookingBtn');
+      const origBtnText = confirmBtn ? confirmBtn.textContent : 'Confirm Booking';
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '⏳ Confirming Booking...';
+      }
+
       try {
+        const customerId = session.id || session.customerId;
+        const customerName = session.name || 'Customer';
+        const customerEmail = session.email;
+        const customerPhone = session.phone || '';
+
         const newBooking = await window.store.addBooking({
-          customerId: session.id || session.customerId,
-          customerName: session.name || 'Alex Morgan',
-          customerEmail: session.email,
-          customerPhone: session.phone || '+1 (555) 000-0000',
+          customerId,
+          customerName,
+          customerEmail,
+          customerPhone,
           providerId: provider.id,
           providerName: provider.name,
           serviceId,
@@ -770,10 +828,16 @@
         });
 
         this.closeModal('customerSlotModal');
-        this.showToast(`🎉 Success! Your appointment is confirmed with ${worker.name} on ${date} at ${time}!`, 'success');
+        this.showToast(`🎉 Appointment confirmed with ${worker.name} on ${date} at ${time}!`, 'success');
         this.switchCustomerTab('bookings');
       } catch (err) {
+        console.error('[Booking Error]', err);
         this.showToast(err.message || 'Booking failed. Slot may already be reserved.', 'error');
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = origBtnText;
+        }
       }
     }
 
@@ -785,19 +849,27 @@
       if (!p) return;
 
       const srvSelect = document.getElementById('cwServiceSelect');
-      srvSelect.innerHTML = (p.services || []).map(s => `
-        <option value="${s.id}" data-duration="${s.duration}" data-price="${s.price}">${s.name} — $${s.price}</option>
-      `).join('');
+      const services = Array.isArray(p.services) && p.services.length > 0 ? p.services : [
+        { id: `srv-${p.id}-1`, name: 'Consultation', price: 50, duration: 45 }
+      ];
+      if (srvSelect) {
+        srvSelect.innerHTML = services.map(s => `
+          <option value="${s.id}" data-duration="${s.duration}" data-price="${s.price}">${s.name} — $${s.price}</option>
+        `).join('');
+      }
 
       const wrkSelect = document.getElementById('cwWorkerSelect');
-      wrkSelect.innerHTML = `
-        <option value="">Any Available Specialist</option>
-        ${(p.workers || []).map(w => `<option value="${w.id}">${w.name}</option>`).join('')}
-      `;
+      const workers = Array.isArray(p.workers) && p.workers.length > 0 ? p.workers : [{ id: null, name: 'Specialist' }];
+      if (wrkSelect) {
+        wrkSelect.innerHTML = `
+          <option value="">Any Available Specialist</option>
+          ${workers.map(w => `<option value="${w.id || ''}">${w.name}</option>`).join('')}
+        `;
+      }
 
       const defaultDate = window.getDateOffset(0);
       const cwDateInput = document.getElementById('cwDateInput');
-      cwDateInput.value = defaultDate;
+      if (cwDateInput) cwDateInput.value = defaultDate;
 
       const cwDateLabel = document.getElementById('cwSelectedDateLabel');
       if (cwDateLabel) {
@@ -811,7 +883,7 @@
           selectedDate: defaultDate,
           minDate: defaultDate,
           onSelect: (dateStr) => {
-            cwDateInput.value = dateStr;
+            if (cwDateInput) cwDateInput.value = dateStr;
             if (cwDateLabel) {
               cwDateLabel.textContent = window.formatReadableDate ? window.formatReadableDate(dateStr) : dateStr;
             }
@@ -823,33 +895,47 @@
     }
 
     async submitCustomerWaitlist(e) {
-      e.preventDefault();
+      if (e) {
+        e.preventDefault();
+        if (e.stopPropagation) e.stopPropagation();
+      }
+
       const session = window.store.getCurrentSession();
+      if (!session || !session.isLoggedIn) {
+        this.showToast('Please sign in as a customer to join the waitlist.', 'error');
+        this.openAuthModal('signin', 'customer');
+        return;
+      }
+
       const provider = window.store.getProviders().find(p => p.id === this.currentBookingProviderId);
-      if (!session || !provider) return;
+      if (!provider) {
+        this.showToast('Provider not found.', 'error');
+        return;
+      }
 
       const srvSelect = document.getElementById('cwServiceSelect');
-      const srvOption = srvSelect.options[srvSelect.selectedIndex];
-      const serviceId = srvSelect.value;
-      const serviceName = srvOption.text.split('—')[0].trim();
-      const duration = Number(srvOption.getAttribute('data-duration')) || 45;
-      const price = Number(srvOption.getAttribute('data-price')) || 50;
+      const serviceId = srvSelect ? srvSelect.value : (provider.services?.[0]?.id || null);
+      const srvOption = srvSelect ? srvSelect.options[srvSelect.selectedIndex] : null;
+      const selectedService = (provider.services || []).find(s => s.id === serviceId) || provider.services?.[0];
+      const serviceName = selectedService?.name || (srvOption?.text ? srvOption.text.split('—')[0].trim() : 'Service');
+      const duration = selectedService ? Number(selectedService.duration) : (Number(srvOption?.getAttribute('data-duration')) || 45);
+      const price = selectedService ? Number(selectedService.price) : (Number(srvOption?.getAttribute('data-price')) || 50);
 
       const wrkSelect = document.getElementById('cwWorkerSelect');
-      const workerId = wrkSelect.value || null;
-      const workerName = workerId ? wrkSelect.options[wrkSelect.selectedIndex].text : 'Any Specialist';
+      const workerId = (wrkSelect && wrkSelect.value) ? wrkSelect.value : null;
+      const workerName = workerId && wrkSelect?.options[wrkSelect.selectedIndex] ? wrkSelect.options[wrkSelect.selectedIndex].text : 'Any Specialist';
 
-      const preferredDate = document.getElementById('cwDateInput').value;
-      const preferredTimeRange = document.getElementById('cwTimeWindowSelect').value;
-      const priority = document.getElementById('cwPrioritySelect').value;
-      const notes = document.getElementById('cwNotesInput').value;
+      const preferredDate = document.getElementById('cwDateInput')?.value || window.getDateOffset(0);
+      const preferredTimeRange = document.getElementById('cwTimeWindowSelect')?.value || 'Any Time Today';
+      const priority = document.getElementById('cwPrioritySelect')?.value || 'regular';
+      const notes = document.getElementById('cwNotesInput')?.value || '';
 
       try {
         const entry = await window.store.addWaitlistEntry({
           providerId: provider.id,
           providerName: provider.name,
           customerId: session.id || session.customerId,
-          customerName: session.name,
+          customerName: session.name || 'Customer',
           customerEmail: session.email,
           customerPhone: session.phone || '+1 (555) 777-8899',
           customerAvatar: session.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
@@ -962,9 +1048,10 @@
       }
     }
 
-    customerCancelBooking(bookingId) {
-      if (confirm('Cancel this appointment slot? It will be freed for waitlisted clients.')) {
-        window.store.deleteBooking(bookingId);
+    async customerCancelBooking(bookingId) {
+      if (confirm('Cancel this appointment slot? It will be freed for other clients.')) {
+        await window.store.deleteBooking(bookingId);
+        this.renderCustomerBookings();
         this.showToast('Appointment cancelled successfully.', 'info');
       }
     }

@@ -613,9 +613,18 @@
       return null;
     }
 
-    deleteBooking(bookingId) {
+    async deleteBooking(bookingId) {
       let bookings = this.getBookings();
-      bookings = bookings.filter(b => b.bookingId !== bookingId);
+      const b = bookings.find(x => x.bookingId === bookingId || x.id === bookingId);
+      const targetId = b ? (b.id || b.bookingId) : bookingId;
+      if (window.api) {
+        try {
+          await window.api.updateBookingStatus(targetId, 'cancelled');
+        } catch (err) {
+          console.warn('[Store] Backend cancel failed:', err);
+        }
+      }
+      bookings = bookings.filter(b => b.bookingId !== bookingId && b.id !== bookingId);
       localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(bookings));
       this.emit('bookings_updated', { bookingId, deleted: true });
     }
