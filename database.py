@@ -679,7 +679,7 @@ def create_booking(customer_id, provider_id, service_id, worker_id,
     return _format_booking(bkg), None
 
 
-def get_bookings(customer_id=None, provider_id=None, date=None):
+def get_bookings(customer_id=None, provider_id=None, date=None, include_cancelled=False):
     """Fetches bookings filtered by customer, provider, or specific date."""
     conn = get_connection()
     cur = conn.cursor()
@@ -696,6 +696,8 @@ def get_bookings(customer_id=None, provider_id=None, date=None):
     if date:
         query += " AND date = ?"
         params.append(date)
+    if not include_cancelled:
+        query += " AND status != 'cancelled'"
 
     query += " ORDER BY date ASC, time ASC;"
     cur.execute(query, params)

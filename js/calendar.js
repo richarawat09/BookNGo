@@ -337,8 +337,47 @@
 
     renderWeekView() {
       const provider = window.store.getCurrentProvider();
-      const allBookings = window.store.getBookings().filter(b => b.providerId === provider.id);
-      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      if (!provider) {
+        this.renderTimelineView();
+        return;
+      }
+
+      // Filter out cancelled bookings so only active/confirmed slots appear
+      const allBookings = window.store.getBookings().filter(b => b.providerId === provider.id && b.status !== 'cancelled');
+      const selectedDate = window.store.getSelectedDate() || window.getDateOffset(0);
+
+      // Determine the Monday of the selected week
+      const [sYear, sMonth, sDay] = selectedDate.split('-').map(Number);
+      const selDate = new Date(sYear, sMonth - 1, sDay);
+      // Monday = 0, ..., Sunday = 6
+      const dayOfWeek = (selDate.getDay() + 6) % 7;
+      const monday = new Date(selDate);
+      monday.setDate(selDate.getDate() - dayOfWeek);
+
+      const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const todayStr = window.getDateOffset(0);
+
+      const weekCols = weekdays.map((dayName, idx) => {
+        const curDate = new Date(monday);
+        curDate.setDate(monday.getDate() + idx);
+        const y = curDate.getFullYear();
+        const m = String(curDate.getMonth() + 1).padStart(2, '0');
+        const d = String(curDate.getDate()).padStart(2, '0');
+        const targetDate = `${y}-${m}-${d}`;
+
+        const isToday = targetDate === todayStr;
+        const isSelected = targetDate === selectedDate;
+        const dayBookings = allBookings.filter(b => b.date === targetDate);
+
+        return {
+          dayName,
+          dayNum: curDate.getDate(),
+          targetDate,
+          isToday,
+          isSelected,
+          dayBookings
+        };
+      });
 
       this.container.innerHTML = `
         <div style="padding: 24px; overflow-y: auto; height: 100%;">
@@ -347,36 +386,32 @@
             <button class="btn-primary" onclick="window.store.setView('timeline')">Switch to Timeline View</button>
           </div>
           <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 14px;">
-            ${days.map((day, idx) => {
-              const targetDate = window.getDateOffset(idx - 1);
-              const dayBookings = allBookings.filter(b => b.date === targetDate);
-              return `
-                <div style="background: var(--bg-surface); border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 14px; min-height: 480px; display: flex; flex-direction: column;">
-                  <div style="font-weight: 700; font-size: 14px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between;">
-                    <span>${day}</span>
-                    <span style="font-size: 11px; color: var(--text-muted);">${dayBookings.length} slots</span>
-                  </div>
-                  <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
-                    ${dayBookings.map(b => {
-                      let clientName = b.customerName || b.customer_name || '';
-                      if (!clientName || clientName.startsWith('usr-') || clientName.startsWith('cust-')) {
-                        const registered = window.store?.getCustomers ? window.store.getCustomers().find(c => c.id === b.customerId) : null;
-                        clientName = registered?.name || 'Client';
-                      }
-                      const bkgId = b.bookingId || b.id;
-                      return `
-                        <div class="appointment-card status-${b.status || 'confirmed'}" style="position: relative; top: auto; height: auto;" onclick="window.app.openAppointmentDrawer('${bkgId}')">
-                          <div style="font-weight: 700; font-size: 12px;">${clientName}</div>
-                          <div style="font-size: 11px; color: var(--text-muted);">${b.time} • ${b.serviceName}</div>
-                          <div style="font-size: 10px; font-weight: 600; color: var(--primary-600); margin-top: 4px;">${b.workerName}</div>
-                        </div>
-                      `;
-                    }).join('')}
-                    ${dayBookings.length === 0 ? '<div style="font-size: 11px; color: var(--text-subtle); text-align: center; margin-top: 40px;">No bookings scheduled</div>' : ''}
-                  </div>
+            ${weekCols.map(col => `
+              <div style="background: var(--bg-surface); border: 1px solid ${col.isToday ? 'var(--primary-500)' : 'var(--border-light)'}; border-radius: var(--radius-lg); padding: 14px; min-height: 480px; display: flex; flex-direction: column;">
+                <div style="font-weight: 700; font-size: 14px; border-bottom: 1px solid var(--border-light); padding-bottom: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                  <span style="${col.isToday ? 'color: var(--primary-600);' : ''}">${col.dayName} <span style="font-size: 11px; opacity: 0.7;">${col.dayNum}</span></span>
+                  <span style="font-size: 11px; color: var(--text-muted);">${col.dayBookings.length} slots</span>
                 </div>
-              `;
-            }).join('')}
+                <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+                  ${col.dayBookings.map(b => {
+                    let clientName = b.customerName || b.customer_name || '';
+                    if (!clientName || clientName.startsWith('usr-') || clientName.startsWith('cust-')) {
+                      const registered = window.store?.getCustomers ? window.store.getCustomers().find(c => c.id === b.customerId) : null;
+                      clientName = registered?.name || 'Client';
+                    }
+                    const bkgId = b.bookingId || b.id;
+                    return `
+                      <div class="appointment-card status-${b.status || 'confirmed'}" style="position: relative; top: auto; height: auto;" onclick="window.app.openAppointmentDrawer('${bkgId}')">
+                        <div style="font-weight: 700; font-size: 12px;">${clientName}</div>
+                        <div style="font-size: 11px; color: var(--text-muted);">${b.time} • ${b.serviceName}</div>
+                        <div style="font-size: 10px; font-weight: 600; color: var(--primary-600); margin-top: 4px;">${b.workerName}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                  ${col.dayBookings.length === 0 ? '<div style="font-size: 11px; color: var(--text-subtle); text-align: center; margin-top: 40px;">No bookings scheduled</div>' : ''}
+                </div>
+              </div>
+            `).join('')}
           </div>
         </div>
       `;
@@ -401,7 +436,7 @@
       const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       const todayStr = window.getDateOffset(0);
 
-      const allBookings = window.store.getBookings().filter(b => b.providerId === provider.id);
+      const allBookings = window.store.getBookings().filter(b => b.providerId === provider.id && b.status !== 'cancelled');
 
       const firstDay = new Date(viewYear, viewMonth, 1);
       let startDay = (firstDay.getDay() + 6) % 7; // Monday = 0

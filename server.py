@@ -228,7 +228,8 @@ def get_bookings():
     customer_id = request.args.get('customer_id')
     provider_id = request.args.get('provider_id')
     date = request.args.get('date')
-    bookings = database.get_bookings(customer_id=customer_id, provider_id=provider_id, date=date)
+    include_cancelled = request.args.get('include_cancelled', 'false').lower() == 'true'
+    bookings = database.get_bookings(customer_id=customer_id, provider_id=provider_id, date=date, include_cancelled=include_cancelled)
     return jsonify({"success": True, "bookings": bookings})
 
 
