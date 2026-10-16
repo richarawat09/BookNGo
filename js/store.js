@@ -25,6 +25,9 @@
     constructor() {
       this.subscribers = {};
       this.initStorage();
+      if (window.api) {
+        this.syncFromBackend();
+      }
     }
 
     initStorage() {
@@ -38,7 +41,7 @@
         try { localStorage.removeItem(k); } catch (e) {}
       });
 
-      // Providers: ZERO pre-made businesses. User/Provider creates their own.
+      // Providers: ZERO pre-made businesses. User/Provider creates their own in SQL database.
       if (!localStorage.getItem(STORAGE_KEYS.PROVIDERS)) {
         localStorage.setItem(STORAGE_KEYS.PROVIDERS, JSON.stringify([]));
       }
@@ -54,8 +57,8 @@
       if (!localStorage.getItem(STORAGE_KEYS.WAITLIST)) {
         localStorage.setItem(STORAGE_KEYS.WAITLIST, JSON.stringify([]));
       }
-      // Session: ALWAYS starts logged out so Login Page shows FIRST!
-      if (!localStorage.getItem(STORAGE_KEYS.CURRENT_USER)) {
+      // Session: ALWAYS starts logged out so Login Page shows FIRST on fresh visit!
+      if (!sessionStorage.getItem('bng_session_active')) {
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify({ isLoggedIn: false }));
       }
       // Reviews
@@ -85,6 +88,36 @@
       }
     }
 
+    async syncFromBackend() {
+      if (!window.api) return;
+      try {
+        const provRes = await window.api.getProviders();
+        if (provRes && provRes.success && Array.isArray(provRes.providers)) {
+          localStorage.setItem(STORAGE_KEYS.PROVIDERS, JSON.stringify(provRes.providers));
+          this.emit('providers_updated', provRes.providers);
+
+          const curId = this.getCurrentProviderId();
+          if (!curId && provRes.providers.length > 0) {
+            this.setCurrentProvider(provRes.providers[0].id);
+          }
+        }
+
+        const bkgRes = await window.api.getBookings();
+        if (bkgRes && bkgRes.success && Array.isArray(bkgRes.bookings)) {
+          localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(bkgRes.bookings));
+          this.emit('bookings_updated', bkgRes.bookings);
+        }
+
+        const wlRes = await window.api.getWaitlist();
+        if (wlRes && wlRes.success && Array.isArray(wlRes.waitlist)) {
+          localStorage.setItem(STORAGE_KEYS.WAITLIST, JSON.stringify(wlRes.waitlist));
+          this.emit('waitlist_updated', wlRes.waitlist);
+        }
+      } catch (err) {
+        console.warn('[Store] Backend sync failed:', err);
+      }
+    }
+
     // Session & Multi-Role Authentication (Customer, Provider, Admin)
     getCurrentSession() {
       try {
@@ -95,9 +128,35 @@
       }
     }
 
-    login(role, email, password) {
+    async login(role, email, password) {
       const cleanEmail = (email || '').trim().toLowerCase();
 
+      // Connect to Python Flask backend & SQL Database
+      if (window.api) {
+        const res = await window.api.login({ role, email: cleanEmail, password });
+        if (res.success && res.session) {
+          const session = res.session;
+          try { sessionStorage.setItem('bng_session_active', '1'); } catch(e) {}
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
+          if (session.providerId) {
+            localStorage.setItem(STORAGE_KEYS.SELECTED_PROVIDER, session.providerId);
+          }
+          await this.syncFromBackend();
+          this.emit('session_changed', session);
+          if (res.provider) {
+            this.emit('provider_changed', res.provider);
+          }
+          return { success: true, session, provider: res.provider };
+        } else {
+          return {
+            success: false,
+            error: res.error && (res.error.includes('No account found') || res.error.includes('not found')) ? 'NO_ACCOUNT' : 'INVALID_CREDENTIALS',
+            message: res.error || 'Login failed. Please check your credentials.'
+          };
+        }
+      }
+
+      // Local fallback
       if (role === 'admin') {
         const session = {
           isLoggedIn: true,
@@ -106,6 +165,7 @@
           name: 'Platform Administrator',
           email: cleanEmail || 'admin@bookngo.com'
         };
+        try { sessionStorage.setItem('bng_session_active', '1'); } catch(e) {}
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
         this.emit('session_changed', session);
         return { success: true, session };
@@ -139,6 +199,7 @@
           phone: matched.phone || '',
           avatar: matched.avatar
         };
+        try { sessionStorage.setItem('bng_session_active', '1'); } catch(e) {}
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
         this.emit('session_changed', session);
         return { success: true, session };
@@ -151,8 +212,36 @@
       return { success: false, message: 'Invalid role.' };
     }
 
-    registerCustomer({ name, email, phone, password }) {
+    async registerCustomer({ name, email, phone, password }) {
       const cleanEmail = (email || '').trim().toLowerCase();
+
+      // Connect to Python Flask backend & SQL Database
+      if (window.api) {
+        const res = await window.api.register({
+          role: 'customer',
+          email: cleanEmail,
+          password: password,
+          name: name || cleanEmail.split('@')[0],
+          phone: phone || ''
+        });
+
+        if (res.success && res.session) {
+          const session = res.session;
+          try { sessionStorage.setItem('bng_session_active', '1'); } catch(e) {}
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
+          await this.syncFromBackend();
+          this.emit('session_changed', session);
+          return { success: true, session };
+        } else {
+          return {
+            success: false,
+            error: res.error && res.error.includes('already exists') ? 'EXISTS' : 'FAILED',
+            message: res.error || 'Failed to create customer account.'
+          };
+        }
+      }
+
+      // Local fallback
       const customers = this.getCustomers();
       const existing = customers.find(c => (c.email || '').toLowerCase() === cleanEmail);
       if (existing) {
@@ -174,7 +263,6 @@
         avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80'
       };
       this.addCustomer(newCustomer);
-
       return this.login('customer', cleanEmail, password);
     }
 
@@ -208,6 +296,7 @@
         name: matched.name
       };
 
+      try { sessionStorage.setItem('bng_session_active', '1'); } catch(e) {}
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
       localStorage.setItem(STORAGE_KEYS.SELECTED_PROVIDER, matched.id);
       this.emit('session_changed', session);
@@ -215,7 +304,10 @@
       return { success: true, session, provider: matched };
     }
 
-    logout() {
+    async logout() {
+      if (window.api) {
+        try { await window.api.logout(); } catch(e) {}
+      }
       const session = {
         isLoggedIn: false,
         role: 'guest',
@@ -223,14 +315,56 @@
         email: null,
         name: null
       };
+      try { sessionStorage.removeItem('bng_session_active'); } catch(e) {}
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
       this.emit('session_changed', session);
       return session;
     }
 
-    registerProviderBusiness(businessData) {
-      const providers = this.getProviders();
+    async registerProviderBusiness(businessData) {
       const cleanEmail = (businessData.email || '').trim().toLowerCase();
+
+      // Connect to Python Flask backend & SQL Database
+      if (window.api) {
+        const res = await window.api.register({
+          role: 'provider',
+          email: cleanEmail,
+          password: businessData.password,
+          name: businessData.ownerName || businessData.name.split(' ')[0],
+          phone: businessData.phone || '',
+          businessName: businessData.name || 'My Booking Business',
+          businessCategory: businessData.category || 'Salons & Spas',
+          businessCategoryId: businessData.categoryId || 'cat-salon',
+          tagline: businessData.tagline,
+          description: businessData.description,
+          location: businessData.location,
+          address: businessData.address
+        });
+
+        if (res.success && res.session) {
+          const session = res.session;
+          try { sessionStorage.setItem('bng_session_active', '1'); } catch(e) {}
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
+          if (session.providerId) {
+            localStorage.setItem(STORAGE_KEYS.SELECTED_PROVIDER, session.providerId);
+          }
+          await this.syncFromBackend();
+          this.emit('session_changed', session);
+          if (res.provider) {
+            this.emit('provider_changed', res.provider);
+          }
+          return { success: true, session, provider: res.provider };
+        } else {
+          return {
+            success: false,
+            error: res.error && res.error.includes('already exists') ? 'EXISTS' : 'FAILED',
+            message: res.error || 'Failed to register business.'
+          };
+        }
+      }
+
+      // Local fallback
+      const providers = this.getProviders();
       const existing = providers.find(p => (p.email || '').toLowerCase() === cleanEmail);
       if (existing) {
         return {
@@ -283,6 +417,7 @@
         name: newProvider.name
       };
 
+      try { sessionStorage.setItem('bng_session_active', '1'); } catch(e) {}
       localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
       localStorage.setItem(STORAGE_KEYS.SELECTED_PROVIDER, newProvider.id);
       this.emit('session_changed', session);
@@ -433,7 +568,20 @@
       return all.filter(b => b.providerId === providerId && b.date === date && b.status !== 'cancelled');
     }
 
-    addBooking(bookingData) {
+    async addBooking(bookingData) {
+      if (window.api) {
+        const res = await window.api.createBooking(bookingData);
+        if (res.success && res.booking) {
+          const bookings = this.getBookings();
+          bookings.push(res.booking);
+          localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(bookings));
+          this.emit('bookings_updated', res.booking);
+          return res.booking;
+        } else {
+          throw new Error(res.error || 'Failed to create booking in database');
+        }
+      }
+
       const bookings = this.getBookings();
       const newBooking = {
         bookingId: bookingData.bookingId || 'BNG-' + Math.floor(100000 + Math.random() * 900000),
@@ -480,7 +628,20 @@
       return list.filter(w => (!w.providerId || w.providerId === providerId) && w.status !== 'booked' && w.status !== 'expired');
     }
 
-    addWaitlistEntry(entryData) {
+    async addWaitlistEntry(entryData) {
+      if (window.api) {
+        const res = await window.api.joinWaitlist(entryData);
+        if (res.success && res.waitlist) {
+          const waitlist = this.getWaitlist();
+          waitlist.push(res.waitlist);
+          localStorage.setItem(STORAGE_KEYS.WAITLIST, JSON.stringify(waitlist));
+          this.emit('waitlist_updated', res.waitlist);
+          return res.waitlist;
+        } else {
+          throw new Error(res.error || 'Failed to join waitlist in database');
+        }
+      }
+
       const waitlist = this.getWaitlist();
       const nextPos = waitlist.filter(w => w.status === 'waiting').length + 1;
       const newEntry = {
@@ -519,23 +680,32 @@
     }
 
     // Assign waitlisted client to slot
-    assignWaitlistToSlot(waitlistId, workerId, date, time) {
+    async assignWaitlistToSlot(waitlistId, workerId, date, time) {
+      if (window.api) {
+        const res = await window.api.assignWaitlist(waitlistId, { workerId, date, time });
+        if (res.success && res.booking) {
+          await this.syncFromBackend();
+          this.emit('waitlist_converted', { waitlist: { id: waitlistId }, booking: res.booking });
+          return res.booking;
+        }
+      }
+
       const waitlist = this.getWaitlist();
       const entry = waitlist.find(w => w.id === waitlistId);
       if (!entry) return null;
 
       const provider = this.getCurrentProvider();
-      const worker = provider.workers.find(w => w.id === workerId) || provider.workers[0];
-      const service = provider.services.find(s => s.id === entry.serviceId) || provider.services[0];
+      const worker = (provider && provider.workers ? provider.workers.find(w => w.id === workerId) : null) || (provider?.workers ? provider.workers[0] : null) || { id: workerId, name: 'Specialist' };
+      const service = (provider && provider.services ? provider.services.find(s => s.id === entry.serviceId) : null) || (provider?.services ? provider.services[0] : null) || { id: entry.serviceId, name: entry.serviceName, price: 50, duration: 45 };
 
       // Create new booking
-      const newBooking = this.addBooking({
+      const newBooking = await this.addBooking({
         customerId: entry.customerId || 'cust-' + Date.now(),
         customerName: entry.customerName,
         customerEmail: entry.customerEmail,
         customerPhone: entry.customerPhone,
-        providerId: provider.id,
-        providerName: provider.name,
+        providerId: provider ? provider.id : entry.providerId,
+        providerName: provider ? provider.name : (entry.providerName || 'Business'),
         serviceId: service.id,
         serviceName: service.name,
         workerId: worker.id,
@@ -673,7 +843,16 @@
       }
     }
 
-    addReview({ bookingId, providerId, customerId, customerName, rating, comment }) {
+    async addReview({ bookingId, providerId, customerId, customerName, rating, comment }) {
+      if (window.api) {
+        try {
+          await window.api.addReview({ bookingId, providerId, customerId, customerName, rating, comment });
+          await this.syncFromBackend();
+        } catch (e) {
+          console.warn('[Store] API addReview failed:', e);
+        }
+      }
+
       const reviews = this.getReviews();
       const newReview = {
         id: 'rev-' + Date.now().toString(36),

@@ -1670,6 +1670,18 @@ input:focus, select:focus, textarea:focus {
   display: flex;
 }
 
+#authPortal {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: 100vh;
+  width: 100vw;
+}
+
+#authPortal.active {
+  display: flex !important;
+  flex-direction: column;
+}
+
 /* Auth / Role Selection Landing Page */
 .auth-page-wrapper {
   flex: 1;
@@ -2221,11 +2233,12 @@ input:focus, select:focus, textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 40px 16px;
   background: radial-gradient(circle at 10% 15%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
               radial-gradient(circle at 90% 85%, rgba(79, 70, 229, 0.08) 0%, transparent 50%),
               var(--bg-page);
-  min-height: 100vh;
+  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .simple-auth-card {

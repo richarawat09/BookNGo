@@ -18,11 +18,16 @@
     }
 
     init() {
-      document.addEventListener('DOMContentLoaded', () => {
+      const start = () => {
         this.applyTheme(window.store.getTheme());
         this.bindEvents();
         this.checkSessionAndRoute();
-      });
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+      } else {
+        start();
+      }
     }
 
     bindEvents() {
@@ -73,8 +78,13 @@
         }
 
         document.addEventListener('click', (e) => {
-          if (providerCalendarPopover.style.display !== 'none' && !providerCalendarPopover.contains(e.target) && !btnOpenDatePicker.contains(e.target)) {
-            providerCalendarPopover.style.display = 'none';
+          if (!e || !e.target) return;
+          if (providerCalendarPopover.style.display !== 'none') {
+            const clickedInside = providerCalendarPopover.contains(e.target);
+            const clickedTrigger = btnOpenDatePicker && btnOpenDatePicker.contains(e.target);
+            if (!clickedInside && !clickedTrigger) {
+              providerCalendarPopover.style.display = 'none';
+            }
           }
         });
       }
@@ -177,6 +187,10 @@
     // 1. ROUTING & PORTAL SWITCHING
     // ========================================================
     checkSessionAndRoute() {
+      if (window.location.hash === '#login' || window.location.search.includes('login')) {
+        window.store.logout();
+      }
+
       const session = window.store.getCurrentSession();
       const authPortal = document.getElementById('authPortal');
       const customerPortal = document.getElementById('customerPortal');
@@ -210,11 +224,14 @@
         this.setupAdminPortal(session);
         return;
       }
+
+      if (authPortal) authPortal.classList.add('active');
     }
 
     logout() {
       window.store.logout();
-      this.showToast('Signed out of BookNGo. Please select a portal to continue.', 'info');
+      this.checkSessionAndRoute();
+      this.showToast('Signed out of BookNGo.', 'info');
     }
 
     applyTheme(theme) {
@@ -299,7 +316,7 @@
       }
     }
 
-    handleAuthSubmit(e) {
+    async handleAuthSubmit(e) {
       e.preventDefault();
       const emailInput = document.getElementById('authEmailInput');
       const passwordInput = document.getElementById('authPasswordInput');
@@ -313,53 +330,71 @@
         return;
       }
 
-      if (this.currentAuthRole === 'admin') {
-        const res = window.store.login('admin', email, password);
-        if (res && res.success) {
-          this.showToast('Logged in to Admin Management Portal', 'success');
-        }
-        return;
+      const submitBtn = document.getElementById('authSubmitBtn');
+      const origText = submitBtn ? submitBtn.textContent : '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Processing...';
       }
 
-      if (this.currentAuthMode === 'signup') {
-        if (this.currentAuthRole === 'customer') {
-          const res = window.store.registerCustomer({ name, email, password });
-          if (!res.success) {
-            this.showToast(res.message, 'error');
-            if (res.error === 'EXISTS') this.switchAuthMode('signin');
-            return;
-          }
-          this.showToast(`Account created for ${name}! Saved permanently for future logins.`, 'success');
-        } else if (this.currentAuthRole === 'provider') {
-          const bizNameInput = document.getElementById('authBizNameInput');
-          const bizCatInput = document.getElementById('authBizCatInput');
-          const bizName = bizNameInput?.value?.trim() || `${name}'s Studio`;
-          const category = bizCatInput?.value || 'Salons & Spas';
-          const res = window.store.registerProviderBusiness({
-            name: bizName,
-            category,
-            ownerName: name,
-            email,
-            password
-          });
-          if (!res.success) {
-            this.showToast(res.message, 'error');
-            if (res.error === 'EXISTS') this.switchAuthMode('signin');
-            return;
-          }
-          this.showToast(`Business "${bizName}" registered! Saved permanently for future logins.`, 'success');
-        }
-      } else {
-        // Sign In
-        const res = window.store.login(this.currentAuthRole, email, password);
-        if (!res.success) {
-          this.showToast(res.message, 'error');
-          if (res.error === 'NO_ACCOUNT') {
-            this.switchAuthMode('signup');
+      try {
+        if (this.currentAuthRole === 'admin') {
+          const res = await window.store.login('admin', email, password);
+          if (res && res.success) {
+            this.showToast('Logged in to Admin Management Portal', 'success');
+          } else {
+            this.showToast(res?.message || 'Admin login failed', 'error');
           }
           return;
         }
-        this.showToast(`Welcome back, ${res.session.name || email}!`, 'success');
+
+        if (this.currentAuthMode === 'signup') {
+          if (this.currentAuthRole === 'customer') {
+            const res = await window.store.registerCustomer({ name, email, password });
+            if (!res.success) {
+              this.showToast(res.message, 'error');
+              if (res.error === 'EXISTS') this.switchAuthMode('signin');
+              return;
+            }
+            this.showToast(`Account created for ${name}! Saved permanently in database.`, 'success');
+          } else if (this.currentAuthRole === 'provider') {
+            const bizNameInput = document.getElementById('authBizNameInput');
+            const bizCatInput = document.getElementById('authBizCatInput');
+            const bizName = bizNameInput?.value?.trim() || `${name}'s Studio`;
+            const category = bizCatInput?.value || 'Salons & Spas';
+            const res = await window.store.registerProviderBusiness({
+              name: bizName,
+              category,
+              ownerName: name,
+              email,
+              password
+            });
+            if (!res.success) {
+              this.showToast(res.message, 'error');
+              if (res.error === 'EXISTS') this.switchAuthMode('signin');
+              return;
+            }
+            this.showToast(`Business "${bizName}" registered! Saved permanently in database.`, 'success');
+          }
+        } else {
+          // Sign In
+          const res = await window.store.login(this.currentAuthRole, email, password);
+          if (!res.success) {
+            this.showToast(res.message, 'error');
+            if (res.error === 'NO_ACCOUNT') {
+              this.switchAuthMode('signup');
+            }
+            return;
+          }
+          this.showToast(`Welcome back, ${res.session.name || email}!`, 'success');
+        }
+      } catch (err) {
+        this.showToast('Authentication error: ' + (err.message || 'Server error'), 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = origText || (this.currentAuthMode === 'signup' ? 'Create Account' : 'Sign In');
+        }
       }
     }
 
@@ -680,14 +715,20 @@
       document.getElementById('custConfirmBookingBtn').disabled = false;
     }
 
-    submitCustomerSlotBooking(e) {
+    async submitCustomerSlotBooking(e) {
       e.preventDefault();
       const session = window.store.getCurrentSession();
-      if (!session) return;
+      if (!session) {
+        this.showToast('Please sign in to book an appointment.', 'error');
+        return;
+      }
 
       const providerId = this.currentBookingProviderId;
       const provider = window.store.getProviders().find(p => p.id === providerId);
-      if (!provider) return;
+      if (!provider) {
+        this.showToast('Provider not found.', 'error');
+        return;
+      }
 
       const srvSelect = document.getElementById('custSlotServiceSelect');
       const serviceId = srvSelect.value;
@@ -697,34 +738,43 @@
       const duration = Number(srvOption.getAttribute('data-duration')) || 45;
 
       const wrkSelect = document.getElementById('custSlotWorkerSelect');
-      const workerId = wrkSelect.value === 'any' ? (provider.workers[0]?.id || 'wrk-101') : wrkSelect.value;
-      const worker = provider.workers.find(w => w.id === workerId) || provider.workers[0];
+      const workerId = wrkSelect.value === 'any' ? (provider.workers[0]?.id || null) : wrkSelect.value;
+      const worker = provider.workers.find(w => w.id === workerId) || provider.workers[0] || { id: null, name: 'Specialist' };
 
       const date = document.getElementById('custSlotDateInput').value;
       const time = this.selectedBookingSlotTime;
       const notes = document.getElementById('custSlotNotesInput').value;
 
-      const newBooking = window.store.addBooking({
-        customerId: session.id || session.customerId || 'cust-1',
-        customerName: session.name || 'Alex Morgan',
-        customerEmail: session.email,
-        customerPhone: session.phone || '+1 (555) 000-0000',
-        providerId: provider.id,
-        providerName: provider.name,
-        serviceId,
-        serviceName,
-        workerId: worker.id,
-        workerName: worker.name,
-        date,
-        time,
-        duration,
-        price,
-        notes
-      });
+      if (!time) {
+        this.showToast('Please select a time slot from the calendar.', 'error');
+        return;
+      }
 
-      this.closeModal('customerSlotModal');
-      this.showToast(`🎉 Success! Your appointment is confirmed with ${worker.name} on ${date} at ${time}!`, 'success');
-      this.switchCustomerTab('bookings');
+      try {
+        const newBooking = await window.store.addBooking({
+          customerId: session.id || session.customerId,
+          customerName: session.name || 'Alex Morgan',
+          customerEmail: session.email,
+          customerPhone: session.phone || '+1 (555) 000-0000',
+          providerId: provider.id,
+          providerName: provider.name,
+          serviceId,
+          serviceName,
+          workerId: worker.id,
+          workerName: worker.name,
+          date,
+          time,
+          duration,
+          price,
+          notes
+        });
+
+        this.closeModal('customerSlotModal');
+        this.showToast(`🎉 Success! Your appointment is confirmed with ${worker.name} on ${date} at ${time}!`, 'success');
+        this.switchCustomerTab('bookings');
+      } catch (err) {
+        this.showToast(err.message || 'Booking failed. Slot may already be reserved.', 'error');
+      }
     }
 
     // Customer Join Waitlist
@@ -772,7 +822,7 @@
       this.openModal('customerWaitlistModal');
     }
 
-    submitCustomerWaitlist(e) {
+    async submitCustomerWaitlist(e) {
       e.preventDefault();
       const session = window.store.getCurrentSession();
       const provider = window.store.getProviders().find(p => p.id === this.currentBookingProviderId);
@@ -794,29 +844,33 @@
       const priority = document.getElementById('cwPrioritySelect').value;
       const notes = document.getElementById('cwNotesInput').value;
 
-      const entry = window.store.addWaitlistEntry({
-        providerId: provider.id,
-        providerName: provider.name,
-        customerId: session.id,
-        customerName: session.name,
-        customerEmail: session.email,
-        customerPhone: session.phone || '+1 (555) 777-8899',
-        customerAvatar: session.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-        serviceId,
-        serviceName,
-        duration,
-        price,
-        workerId,
-        workerName,
-        preferredDate,
-        preferredTimeRange,
-        priority,
-        notes
-      });
+      try {
+        const entry = await window.store.addWaitlistEntry({
+          providerId: provider.id,
+          providerName: provider.name,
+          customerId: session.id || session.customerId,
+          customerName: session.name,
+          customerEmail: session.email,
+          customerPhone: session.phone || '+1 (555) 777-8899',
+          customerAvatar: session.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+          serviceId,
+          serviceName,
+          duration,
+          price,
+          workerId,
+          workerName,
+          preferredDate,
+          preferredTimeRange,
+          priority,
+          notes
+        });
 
-      this.closeModal('customerWaitlistModal');
-      this.showToast(`⏳ Added to standby queue as position #${entry.position}! You'll be alerted when a slot opens.`, 'success');
-      this.switchCustomerTab('bookings');
+        this.closeModal('customerWaitlistModal');
+        this.showToast(`⏳ Added to standby queue as position #${entry.position || 1}! You'll be alerted when a slot opens.`, 'success');
+        this.switchCustomerTab('bookings');
+      } catch (err) {
+        this.showToast(err.message || 'Failed to join waitlist.', 'error');
+      }
     }
 
     renderCustomerBookings() {
@@ -934,7 +988,7 @@
       });
     }
 
-    submitCustomerReview(e) {
+    async submitCustomerReview(e) {
       e.preventDefault();
       const session = window.store.getCurrentSession();
       const bookingId = document.getElementById('revBookingId').value;
@@ -942,17 +996,21 @@
       const rating = Number(document.getElementById('revRatingInput').value) || 5;
       const comment = document.getElementById('revCommentInput').value;
 
-      window.store.addReview({
-        bookingId,
-        providerId,
-        customerId: session.id,
-        customerName: session.name,
-        rating,
-        comment
-      });
+      try {
+        await window.store.addReview({
+          bookingId,
+          providerId,
+          customerId: session.id || session.customerId,
+          customerName: session.name,
+          rating,
+          comment
+        });
 
-      this.closeModal('leaveReviewModal');
-      this.showToast(`⭐ Review posted! Thank you for rating this service.`, 'success');
+        this.closeModal('leaveReviewModal');
+        this.showToast(`⭐ Review posted! Thank you for rating this service.`, 'success');
+      } catch (err) {
+        this.showToast('Failed to post review.', 'error');
+      }
     }
 
     // ========================================================
@@ -1318,6 +1376,22 @@
       document.getElementById('adminTotalCustomers').textContent = customers.length;
       document.getElementById('adminTotalBookings').textContent = bookings.length;
       document.getElementById('adminTotalWaitlist').textContent = waitlist.filter(w => w.status !== 'booked').length;
+
+      if (window.api) {
+        window.api.getAdminMetrics().then(res => {
+          if (res && res.success && res.metrics) {
+            const m = res.metrics;
+            const provEl = document.getElementById('adminTotalProviders');
+            if (provEl) provEl.textContent = m.total_providers;
+            const custEl = document.getElementById('adminTotalCustomers');
+            if (custEl) custEl.textContent = m.total_users;
+            const bkgEl = document.getElementById('adminTotalBookings');
+            if (bkgEl) bkgEl.textContent = m.total_bookings;
+            const wlEl = document.getElementById('adminTotalWaitlist');
+            if (wlEl) wlEl.textContent = m.active_waitlist;
+          }
+        }).catch(() => {});
+      }
 
       // Render Providers Table
       const provTable = document.getElementById('adminProvidersTableBody');
