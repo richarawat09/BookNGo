@@ -164,26 +164,18 @@
           </div>
         </div>
 
-        <!-- TAB 2: My Bookings & Waitlists -->
+        <!-- TAB 2: My Bookings -->
         <div id="customerTabBookings" style="display: none;">
           <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
             <div>
               <h2 style="font-size: 20px; font-weight: 800;">My Appointments</h2>
-              <p style="font-size: 13px; color: var(--text-muted);">Manage your booked time slots and check standby waitlist positions.</p>
+              <p style="font-size: 13px; color: var(--text-muted);">Manage your booked appointment slots.</p>
             </div>
 
             <!-- Upcoming Appointments -->
             <div>
               <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">📅 Confirmed Appointments</h3>
               <div id="custUpcomingBookingsMount" style="display: flex; flex-direction: column; gap: 10px;">
-                <!-- Populated dynamically -->
-              </div>
-            </div>
-
-            <!-- Waitlist Standby Tickets -->
-            <div>
-              <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">⏳ Standby Waitlist Queue</h3>
-              <div id="custWaitlistMount" style="display: flex; flex-direction: column; gap: 10px;">
                 <!-- Populated dynamically -->
               </div>
             </div>
@@ -252,9 +244,6 @@
               <button class="view-btn" data-view="week" title="Weekly Overview">
                 <span>📊</span> Week
               </button>
-              <button class="view-btn" data-view="waitlist-board" title="Live Standby Waitlist">
-                <span>⏳</span> Waitlist
-              </button>
             </div>
           </div>
 
@@ -262,9 +251,6 @@
           <div class="header-right-actions">
             <button class="btn-primary" onclick="window.app.openNewBookingModal()">
               <span>+</span> <span>New Appointment</span>
-            </button>
-            <button class="btn-secondary" id="toggleWaitlistBtn">
-              <span>⏳</span> <span>Waitlist Queue</span>
             </button>
             <button class="icon-btn" onclick="window.app.toggleTheme()" title="Toggle Theme">🌙</button>
             <button class="btn-secondary" onclick="window.app.logout()">Sign Out</button>
@@ -275,50 +261,16 @@
         <section class="kpi-bar" style="padding: 8px 24px;">
           <div class="kpi-metrics-group" style="gap: 24px;">
             <div style="font-size: 13px;">📅 Today's Bookings: <strong id="kpiBookingsCount">0</strong></div>
-            <div style="font-size: 13px;">⏳ Live Waitlist: <strong id="kpiWaitlistCount" style="color: var(--urgent-solid);">0</strong></div>
             <div style="font-size: 13px;">⚡ Staff Capacity: <strong id="kpiCapacityPercent">0%</strong></div>
             <div style="font-size: 13px;">💎 Revenue: <strong id="kpiRevenueTotal">$0</strong></div>
           </div>
         </section>
 
-        <!-- Calendar Split Workspace -->
+        <!-- Calendar Workspace -->
         <div class="calendar-workspace-split">
-          <div class="calendar-main-view" id="calendarMount">
+          <div class="calendar-main-view" id="calendarMount" style="flex: 1;">
             <!-- Calendar Controller mounts timeline here -->
           </div>
-
-          <!-- Schedulo Waitlist Panel -->
-          <aside class="waitlist-panel" id="waitlistPanel">
-            <div class="waitlist-panel-header">
-              <div class="waitlist-title-wrap">
-                <h3 class="waitlist-title" style="font-size: 15px;">Standby Waitlist</h3>
-                <span class="waitlist-count-badge" id="waitlistHeaderCount">6 In Queue</span>
-              </div>
-              <button class="icon-btn" id="closeWaitlistBtn">✕</button>
-            </div>
-
-            <!-- Waitlist Filter Tabs -->
-            <div class="waitlist-controls-wrap">
-              <input type="text" class="waitlist-search-input" id="waitlistSearchInput" placeholder="Filter waitlist...">
-              <div class="waitlist-filter-tabs">
-                <button class="waitlist-tab-btn active" data-filter="all">All</button>
-                <button class="waitlist-tab-btn" data-filter="urgent">Urgent</button>
-                <button class="waitlist-tab-btn" data-filter="vip">VIP</button>
-                <button class="waitlist-tab-btn" data-filter="today">Today</button>
-              </div>
-            </div>
-
-            <!-- Waitlist Cards List -->
-            <div class="waitlist-cards-list" id="waitlistCardsMount">
-              <!-- Waitlist Controller mounts cards here -->
-            </div>
-
-            <div class="waitlist-panel-footer">
-              <button class="btn-add-waitlist-full" onclick="window.app.openAddWaitlistModal()">
-                <span>＋</span> <span>Add Client to Waitlist</span>
-              </button>
-            </div>
-          </aside>
         </div>
       </main>
     </div>
@@ -342,7 +294,7 @@
       </header>
 
       <div class="admin-body-scroll" style="max-width: 1000px; margin: 0 auto; width: 100%;">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;">
           <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 16px; border-radius: var(--radius-md);">
             <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">TOTAL BUSINESSES</div>
             <div style="font-size: 22px; font-weight: 800; margin-top: 4px;" id="adminTotalProviders">12</div>
@@ -354,10 +306,6 @@
           <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 16px; border-radius: var(--radius-md);">
             <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">TOTAL APPOINTMENTS</div>
             <div style="font-size: 22px; font-weight: 800; margin-top: 4px;" id="adminTotalBookings">18</div>
-          </div>
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 16px; border-radius: var(--radius-md);">
-            <div style="font-size: 11px; color: var(--text-muted); font-weight: 700;">ACTIVE WAITLIST</div>
-            <div style="font-size: 22px; font-weight: 800; color: var(--urgent-solid); margin-top: 4px;" id="adminTotalWaitlist">6</div>
           </div>
         </div>
 
@@ -433,73 +381,9 @@
             <input type="text" id="custSlotNotesInput" class="form-input" placeholder="Any preferences...">
           </div>
         </div>
-        <div class="modal-footer" style="justify-content: space-between;">
-          <button type="button" class="btn-secondary" style="font-size: 12px;" onclick="window.app.openCustomerStandbyWaitlistModal()">
-            ⏳ Full? Join Waitlist
-          </button>
-          <div style="display: flex; gap: 8px;">
-            <button type="button" class="btn-secondary" onclick="window.app.closeModal('customerSlotModal')">Cancel</button>
-            <button type="button" class="btn-primary" id="custConfirmBookingBtn" onclick="window.app.submitCustomerSlotBooking(event)">Confirm Booking</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Customer Join Waitlist Modal -->
-  <div class="modal-backdrop" id="customerWaitlistModal">
-    <div class="modal-container" style="max-width: 460px;">
-      <div class="modal-header">
-        <h3 class="modal-title">Join Live Standby Waitlist</h3>
-        <button class="modal-close-btn" onclick="window.app.closeModal('customerWaitlistModal')">✕</button>
-      </div>
-      <form onsubmit="event.preventDefault(); window.app.submitCustomerWaitlist(event)">
-        <div class="modal-body">
-          <p style="font-size: 12px; color: var(--text-muted);">
-            If an appointment cancels, we'll notify you immediately via SMS to claim the slot!
-          </p>
-          <div class="form-group">
-            <label class="form-label">Service</label>
-            <select id="cwServiceSelect" class="form-select" required></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Preferred Specialist</label>
-            <select id="cwWorkerSelect" class="form-select"></select>
-          </div>
-          <div class="form-group">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <label class="form-label" style="margin-bottom: 0;">📅 Preferred Date</label>
-              <span class="cal-selected-pill" id="cwSelectedDateLabel">Select a day</span>
-            </div>
-            <div class="booking-calendar-wrapper">
-              <div id="cwCalendarMount"></div>
-            </div>
-            <input type="hidden" id="cwDateInput">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Time Window</label>
-            <select id="cwTimeWindowSelect" class="form-select">
-              <option value="Morning (09:00 - 12:00)">Morning (09:00 - 12:00)</option>
-              <option value="Afternoon (12:00 - 16:00)">Afternoon (12:00 - 16:00)</option>
-              <option value="Any Time Today">Any Time Today</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Priority Level</label>
-            <select id="cwPrioritySelect" class="form-select">
-              <option value="vip">⭐ VIP Client Priority</option>
-              <option value="regular" selected>⚡ Standard Flexible</option>
-              <option value="urgent">🚨 Urgent Need Today</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Notes (Optional)</label>
-            <input type="text" id="cwNotesInput" class="form-input" placeholder="Any requests...">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="window.app.closeModal('customerWaitlistModal')">Cancel</button>
-          <button type="button" class="btn-primary" onclick="window.app.submitCustomerWaitlist(event)">Join Waitlist</button>
+        <div class="modal-footer" style="justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn-secondary" onclick="window.app.closeModal('customerSlotModal')">Cancel</button>
+          <button type="button" class="btn-primary" id="custConfirmBookingBtn" onclick="window.app.submitCustomerSlotBooking(event)">Confirm Booking</button>
         </div>
       </form>
     </div>
@@ -590,39 +474,6 @@
     </div>
   </div>
 
-  <!-- Provider Add to Waitlist Modal -->
-  <div class="modal-backdrop" id="addWaitlistModal">
-    <div class="modal-container" style="max-width: 460px;">
-      <div class="modal-header">
-        <h3 class="modal-title">Add Client to Standby Queue</h3>
-        <button class="modal-close-btn" onclick="window.app.closeModal('addWaitlistModal')">✕</button>
-      </div>
-      <form onsubmit="window.app.submitAddWaitlist(event)">
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">Client Name</label>
-            <input type="text" id="wlNameInput" class="form-input" placeholder="e.g. Jessica Taylor" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Phone</label>
-            <input type="tel" id="wlPhoneInput" class="form-input" placeholder="+1 (555) 000-0000" required>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Service</label>
-            <select id="wlServiceSelect" class="form-select" required></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Preferred Date</label>
-            <input type="date" id="wlDateInput" class="form-input" required>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn-secondary" onclick="window.app.closeModal('addWaitlistModal')">Cancel</button>
-          <button type="submit" class="btn-primary">Add to Queue</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <!-- Appointment Details Drawer Modal -->
   <div class="modal-backdrop" id="appointmentDrawerModal">
@@ -654,11 +505,11 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Scripts -->
-  <script src="js/data.js?v=cust_book_fix_v3"></script>
-  <script src="js/api.js?v=cust_book_fix_v3"></script>
-  <script src="js/store.js?v=cust_book_fix_v3"></script>
-  <script src="js/calendar.js?v=cust_book_fix_v3"></script>
-  <script src="js/waitlist.js?v=cust_book_fix_v3"></script>
-  <script src="js/app.js?v=cust_book_fix_v3"></script>
+  <script src="js/data.js?v=clean_booking_v4"></script>
+  <script src="js/api.js?v=clean_booking_v4"></script>
+  <script src="js/store.js?v=clean_booking_v4"></script>
+  <script src="js/calendar.js?v=clean_booking_v4"></script>
+  <script src="js/waitlist.js?v=clean_booking_v4"></script>
+  <script src="js/app.js?v=clean_booking_v4"></script>
 </body>
 </html>

@@ -712,7 +712,7 @@
         if (slotsMount) {
           slotsMount.innerHTML = `
             <div style="background: var(--warning-bg); border: 1px solid var(--warning-border); padding: 12px; border-radius: var(--radius-sm); font-size: 12px; color: var(--warning-text); text-align: center;">
-              ⚠️ All standard slots are booked on ${date}! You can join the live standby waitlist below.
+              ⚠️ All standard slots are booked on ${date}! Please select another date on the calendar.
             </div>
           `;
         }
@@ -1002,30 +1002,6 @@
         `).join('');
       }
 
-      // Render waitlists
-      const mountWaitlist = document.getElementById('custWaitlistMount');
-      if (mountWaitlist) {
-        mountWaitlist.innerHTML = allWaitlist.length === 0 ? `
-          <div style="grid-column: 1 / -1; padding: 24px; background: var(--bg-surface); border: 1px dashed var(--border-light); border-radius: var(--radius-lg); text-align: center; color: var(--text-muted);">
-            You have no active standby waitlist requests.
-          </div>
-        ` : allWaitlist.map(w => `
-          <div style="background: var(--bg-surface); border: 1px solid var(--border-light); padding: 18px; border-radius: var(--radius-lg); display: flex; flex-direction: column; gap: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <span class="wl-pos-badge">Position #${w.position} in Standby Queue</span>
-              <span class="wl-priority-badge ${w.priority}">${w.priorityLabel || w.priority}</span>
-            </div>
-            <h4 style="font-size: 15px; font-weight: 700;">${w.serviceName}</h4>
-            <div style="font-size: 12px; color: var(--text-muted);">${w.providerName} • ${w.preferredDate}</div>
-            <div style="font-size: 12px; color: var(--text-muted);">Requested: ${w.preferredTimeRange} • Prefers: ${w.workerName || 'Any Specialist'}</div>
-            ${w.status === 'notified' ? `
-              <div style="background: var(--urgent-bg); border: 1px solid var(--urgent-border); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; color: var(--urgent-text); font-weight: 600;">
-                📲 Notification dispatched! A cancellation slot opened up for you!
-              </div>
-            ` : ''}
-          </div>
-        `).join('');
-      }
 
       // Render completed (with review button)
       const mountCompleted = document.getElementById('custCompletedBookingsMount');
@@ -1508,10 +1484,14 @@
       const bookings = window.store.getBookings();
       const waitlist = window.store.getWaitlist();
 
-      document.getElementById('adminTotalProviders').textContent = providers.length;
-      document.getElementById('adminTotalCustomers').textContent = customers.length;
-      document.getElementById('adminTotalBookings').textContent = bookings.length;
-      document.getElementById('adminTotalWaitlist').textContent = waitlist.filter(w => w.status !== 'booked').length;
+      const provEl0 = document.getElementById('adminTotalProviders');
+      if (provEl0) provEl0.textContent = providers.length;
+      const custEl0 = document.getElementById('adminTotalCustomers');
+      if (custEl0) custEl0.textContent = customers.length;
+      const bkgEl0 = document.getElementById('adminTotalBookings');
+      if (bkgEl0) bkgEl0.textContent = bookings.length;
+      const wlEl0 = document.getElementById('adminTotalWaitlist');
+      if (wlEl0) wlEl0.textContent = waitlist.filter(w => w.status !== 'booked').length;
 
       if (window.api) {
         window.api.getAdminMetrics().then(res => {
