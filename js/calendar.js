@@ -192,21 +192,27 @@
         const heightPx = (b.duration || 45) * this.minutePixel;
         const statusClass = `status-${b.status || 'confirmed'}`;
         const avatarUrl = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80';
+        let clientName = b.customerName || b.customer_name || '';
+        if (!clientName || clientName.startsWith('usr-') || clientName.startsWith('cust-')) {
+          const registered = window.store?.getCustomers ? window.store.getCustomers().find(c => c.id === b.customerId) : null;
+          clientName = registered?.name || 'Client';
+        }
+        const bkgId = b.bookingId || b.id;
 
         return `
           <div class="appointment-card ${statusClass}" 
                style="top: ${topPx}px; height: ${heightPx}px;"
-               data-booking-id="${b.bookingId}"
-               onclick="window.app.openAppointmentDrawer('${b.bookingId}')">
+               data-booking-id="${bkgId}"
+               onclick="window.app.openAppointmentDrawer('${bkgId}')">
             <div class="appointment-card-top">
               <div class="app-client-meta">
-                <img src="${avatarUrl}" class="app-client-avatar" alt="${b.customerName}">
-                <span class="app-client-name">${b.customerName}</span>
+                <img src="${avatarUrl}" class="app-client-avatar" alt="${clientName}">
+                <span class="app-client-name">${clientName}</span>
               </div>
               <span class="app-time-badge">${b.time}</span>
             </div>
             <div class="appointment-card-middle">
-              <span class="app-service-name">${b.serviceName}</span>
+              <span class="app-service-name">${b.serviceName || 'Consultation'}</span>
             </div>
             <div class="appointment-card-bottom">
               <span class="app-price-tag">$${b.price}</span>
@@ -351,13 +357,21 @@
                     <span style="font-size: 11px; color: var(--text-muted);">${dayBookings.length} slots</span>
                   </div>
                   <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
-                    ${dayBookings.map(b => `
-                      <div class="appointment-card status-${b.status || 'confirmed'}" style="position: relative; top: auto; height: auto;" onclick="window.app.openAppointmentDrawer('${b.bookingId}')">
-                        <div style="font-weight: 700; font-size: 12px;">${b.customerName}</div>
-                        <div style="font-size: 11px; color: var(--text-muted);">${b.time} • ${b.serviceName}</div>
-                        <div style="font-size: 10px; font-weight: 600; color: var(--primary-600); margin-top: 4px;">${b.workerName}</div>
-                      </div>
-                    `).join('')}
+                    ${dayBookings.map(b => {
+                      let clientName = b.customerName || b.customer_name || '';
+                      if (!clientName || clientName.startsWith('usr-') || clientName.startsWith('cust-')) {
+                        const registered = window.store?.getCustomers ? window.store.getCustomers().find(c => c.id === b.customerId) : null;
+                        clientName = registered?.name || 'Client';
+                      }
+                      const bkgId = b.bookingId || b.id;
+                      return `
+                        <div class="appointment-card status-${b.status || 'confirmed'}" style="position: relative; top: auto; height: auto;" onclick="window.app.openAppointmentDrawer('${bkgId}')">
+                          <div style="font-weight: 700; font-size: 12px;">${clientName}</div>
+                          <div style="font-size: 11px; color: var(--text-muted);">${b.time} • ${b.serviceName}</div>
+                          <div style="font-size: 10px; font-weight: 600; color: var(--primary-600); margin-top: 4px;">${b.workerName}</div>
+                        </div>
+                      `;
+                    }).join('')}
                     ${dayBookings.length === 0 ? '<div style="font-size: 11px; color: var(--text-subtle); text-align: center; margin-top: 40px;">No bookings scheduled</div>' : ''}
                   </div>
                 </div>
@@ -427,14 +441,22 @@
               ${dayBookings.length > 0 ? `<span class="month-cell-count">${dayBookings.length} booked</span>` : ''}
             </div>
             <div class="month-cell-events">
-              ${dayBookings.slice(0, 3).map(b => `
-                <div class="month-app-chip status-${b.status || 'confirmed'}" 
-                     onclick="event.stopPropagation(); window.app.openAppointmentDrawer('${b.bookingId}')"
-                     title="${b.time} - ${b.customerName} (${b.serviceName})">
-                  <span class="chip-time">${b.time}</span>
-                  <span class="chip-name">${b.customerName}</span>
-                </div>
-              `).join('')}
+              ${dayBookings.slice(0, 3).map(b => {
+                let clientName = b.customerName || b.customer_name || '';
+                if (!clientName || clientName.startsWith('usr-') || clientName.startsWith('cust-')) {
+                  const registered = window.store?.getCustomers ? window.store.getCustomers().find(c => c.id === b.customerId) : null;
+                  clientName = registered?.name || 'Client';
+                }
+                const bkgId = b.bookingId || b.id;
+                return `
+                  <div class="month-app-chip status-${b.status || 'confirmed'}" 
+                       onclick="event.stopPropagation(); window.app.openAppointmentDrawer('${bkgId}')"
+                       title="${b.time} - ${clientName} (${b.serviceName})">
+                    <span class="chip-time">${b.time}</span>
+                    <span class="chip-name">${clientName}</span>
+                  </div>
+                `;
+              }).join('')}
               ${dayBookings.length > 3 ? `
                 <div class="month-more-chip" onclick="event.stopPropagation(); window.calendarController.zoomToDay('${dStr}')">
                   +${dayBookings.length - 3} more

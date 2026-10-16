@@ -1208,14 +1208,21 @@
 
       const selectCustomer = document.getElementById('nbCustomerSelect');
       if (selectCustomer) {
-        let custHtml = customers.map(c => `
-          <option value="${c.id}" data-name="${c.name}" data-phone="${c.phone || ''}" data-email="${c.email || ''}">${c.name} (${c.phone || c.email || 'Client'})</option>
+        let custHtml = `<option value="">— Quick-select registered client (or enter above) —</option>`;
+        custHtml += customers.map(c => `
+          <option value="${c.id}" data-name="${c.name}" data-phone="${c.phone || ''}" data-email="${c.email || ''}">${c.name}${c.phone || c.email ? ` (${c.phone || c.email})` : ''}</option>
         `).join('');
-        if (customers.length === 0) {
-          custHtml = `<option value="walkin" data-name="Walk-in Client" data-phone="" data-email="">Walk-in Client</option>`;
-        }
         selectCustomer.innerHTML = custHtml;
       }
+
+      const nameInput = document.getElementById('nbCustomerNameInput');
+      if (nameInput) nameInput.value = '';
+
+      const phoneInput = document.getElementById('nbCustomerPhoneInput');
+      if (phoneInput) phoneInput.value = '';
+
+      const emailInput = document.getElementById('nbCustomerEmailInput');
+      if (emailInput) emailInput.value = '';
 
       const dateInput = document.getElementById('nbDateInput');
       if (dateInput) dateInput.value = window.store.getSelectedDate();
@@ -1229,6 +1236,20 @@
       this.openModal('newBookingModal');
     }
 
+    onNbCustomerSelected(selectEl) {
+      if (!selectEl) return;
+      const opt = selectEl.options[selectEl.selectedIndex];
+      if (!opt || !opt.value) return;
+
+      const nameInput = document.getElementById('nbCustomerNameInput');
+      const phoneInput = document.getElementById('nbCustomerPhoneInput');
+      const emailInput = document.getElementById('nbCustomerEmailInput');
+
+      if (nameInput && opt.dataset.name) nameInput.value = opt.dataset.name;
+      if (phoneInput) phoneInput.value = opt.dataset.phone || '';
+      if (emailInput) emailInput.value = opt.dataset.email || '';
+    }
+
     async submitNewBooking(e) {
       e.preventDefault();
       const provider = window.store.getCurrentProvider();
@@ -1239,10 +1260,14 @@
 
       const custSelect = document.getElementById('nbCustomerSelect');
       const opt = custSelect ? custSelect.options[custSelect.selectedIndex] : null;
-      const customerName = opt ? (opt.getAttribute('data-name') || opt.text) : 'Client';
-      const customerPhone = opt ? (opt.getAttribute('data-phone') || '') : '';
-      const customerEmail = opt ? (opt.getAttribute('data-email') || '') : '';
-      const customerId = custSelect ? custSelect.value : 'walkin';
+      const nameInput = document.getElementById('nbCustomerNameInput');
+      const phoneInput = document.getElementById('nbCustomerPhoneInput');
+      const emailInput = document.getElementById('nbCustomerEmailInput');
+
+      const customerName = (nameInput?.value || '').trim() || (opt?.dataset.name) || 'Walk-in Client';
+      const customerPhone = (phoneInput?.value || '').trim() || (opt?.dataset.phone) || '';
+      const customerEmail = (emailInput?.value || '').trim() || (opt?.dataset.email) || '';
+      const customerId = (opt && opt.value) ? opt.value : 'walkin';
 
       const srvSelect = document.getElementById('nbServiceSelect');
       const srvOpt = srvSelect ? srvSelect.options[srvSelect.selectedIndex] : null;
@@ -1381,36 +1406,51 @@
 
     openAppointmentDrawer(bookingId) {
       const bookings = window.store.getBookings();
-      const b = bookings.find(item => item.bookingId === bookingId);
+      const b = bookings.find(item => item.bookingId === bookingId || item.id === bookingId);
       if (!b) return;
+
+      let clientName = b.customerName || b.customer_name || '';
+      if (!clientName || clientName.startsWith('usr-') || clientName.startsWith('cust-')) {
+        const registered = window.store?.getCustomers ? window.store.getCustomers().find(c => c.id === b.customerId) : null;
+        clientName = registered?.name || 'Client';
+      }
 
       const content = document.getElementById('appointmentDrawerContent');
       if (content) {
         content.innerHTML = `
           <div style="border-bottom: 1px solid var(--border-light); padding-bottom: 14px;">
-            <span class="app-status-pill ${b.status || 'confirmed'}">${b.status || 'confirmed'}</span>
-            <h3 style="font-size: 18px; font-weight: 700; margin-top: 6px;">${b.customerName}</h3>
-            <p style="font-size: 12px; color: var(--text-muted);">${b.bookingId}</p>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="app-status-pill ${b.status || 'confirmed'}">${b.status || 'confirmed'}</span>
+              <span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; background: var(--bg-body); border: 1px solid var(--border-light); color: var(--text-muted);">
+                Ref: #${b.bookingId || b.id}
+              </span>
+            </div>
+            <h3 style="font-size: 18px; font-weight: 700; margin-top: 8px; margin-bottom: 0; color: var(--text-strong);">${clientName}</h3>
           </div>
           <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 14px;">
             <div>
               <div style="font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase;">Service</div>
-              <div style="font-weight: 600;">${b.serviceName} ($${b.price})</div>
+              <div style="font-weight: 600; font-size: 14px; margin-top: 2px;">${b.serviceName} ($${b.price})</div>
             </div>
             <div>
               <div style="font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase;">Specialist & Time</div>
-              <div>${b.date} at ${b.time} with ${b.workerName}</div>
+              <div style="font-weight: 500; font-size: 13px; margin-top: 2px;">📅 ${b.date} at ${b.time} with 👤 ${b.workerName}</div>
             </div>
             <div>
               <div style="font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase;">Client Contact</div>
-              <div>📞 ${b.customerPhone} • ✉️ ${b.customerEmail}</div>
+              <div style="font-weight: 500; font-size: 13px; margin-top: 2px;">
+                ${b.customerPhone ? '📞 ' + b.customerPhone : ''}
+                ${b.customerPhone && b.customerEmail ? ' • ' : ''}
+                ${b.customerEmail ? '✉️ ' + b.customerEmail : ''}
+                ${!b.customerPhone && !b.customerEmail ? '<span style="color: var(--text-muted);">No direct contact recorded</span>' : ''}
+              </div>
             </div>
             <div style="margin-top: 8px;">
               <div style="font-size: 11px; font-weight: 700; color: var(--text-subtle); text-transform: uppercase; margin-bottom: 6px;">Change Status</div>
               <div style="display: flex; gap: 6px;">
-                <button class="btn-secondary" onclick="window.app.updateStatus('${b.bookingId}', 'confirmed')">Confirmed</button>
-                <button class="btn-secondary" onclick="window.app.updateStatus('${b.bookingId}', 'in-progress')">In Progress</button>
-                <button class="btn-secondary" onclick="window.app.updateStatus('${b.bookingId}', 'completed')">Completed</button>
+                <button class="btn-secondary" onclick="window.app.updateStatus('${b.bookingId || b.id}', 'confirmed')">Confirmed</button>
+                <button class="btn-secondary" onclick="window.app.updateStatus('${b.bookingId || b.id}', 'in-progress')">In Progress</button>
+                <button class="btn-secondary" onclick="window.app.updateStatus('${b.bookingId || b.id}', 'completed')">Completed</button>
               </div>
             </div>
           </div>

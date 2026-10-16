@@ -439,12 +439,15 @@ def _format_booking(d):
     d['providerId'] = d.get('provider_id')
     d['serviceId'] = d.get('service_id')
     d['workerId'] = d.get('worker_id')
-    d['customerName'] = d.get('customer_name')
-    d['customerEmail'] = d.get('customer_email')
-    d['customerPhone'] = d.get('customer_phone')
-    d['serviceName'] = d.get('service_name')
-    d['workerName'] = d.get('worker_name')
-    d['providerName'] = d.get('provider_name')
+    cust_name = d.get('customer_name')
+    if not cust_name or cust_name.startswith('usr-') or cust_name.startswith('cust-'):
+        cust_name = 'Client'
+    d['customerName'] = cust_name
+    d['customerEmail'] = d.get('customer_email') or ''
+    d['customerPhone'] = d.get('customer_phone') or ''
+    d['serviceName'] = d.get('service_name') or 'Service'
+    d['workerName'] = d.get('worker_name') or 'Specialist'
+    d['providerName'] = d.get('provider_name') or 'Provider'
     d['createdAt'] = d.get('created_at')
     return d
 
