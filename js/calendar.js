@@ -91,7 +91,7 @@
           <div class="timeline-staff-header-row">
             <div class="timeline-time-corner">GMT / TIME</div>
             ${workers.map(w => {
-              const workerBookings = bookings.filter(b => b.workerId === w.id);
+              const workerBookings = bookings.filter(b => b.workerId === w.id || b.worker_id === w.id || (!b.workerId && !b.worker_id && workers.length === 1));
               const count = workerBookings.length;
               return `
                 <div class="staff-column-header" data-worker-id="${w.id}">
@@ -116,13 +116,16 @@
             </div>
 
             <!-- Staff Lanes -->
-            ${workers.map(w => `
-              <div class="staff-timeline-lane" data-worker-id="${w.id}" data-worker-name="${w.name}">
-                ${this.generateLaneSlots(w)}
-                ${this.generateBreakBlocks(provider)}
-                ${this.generateAppointmentCards(bookings.filter(b => b.workerId === w.id))}
-              </div>
-            `).join('')}
+            ${workers.map(w => {
+              const workerBookings = bookings.filter(b => b.workerId === w.id || b.worker_id === w.id || (!b.workerId && !b.worker_id && workers.length === 1));
+              return `
+                <div class="staff-timeline-lane" data-worker-id="${w.id}" data-worker-name="${w.name}">
+                  ${this.generateLaneSlots(w)}
+                  ${this.generateBreakBlocks(provider)}
+                  ${this.generateAppointmentCards(workerBookings)}
+                </div>
+              `;
+            }).join('')}
 
             <!-- Live Time Indicator Line -->
             <div class="current-time-indicator" id="liveTimeBar" style="display: none;"></div>
@@ -343,7 +346,7 @@
       }
 
       // Filter out cancelled bookings so only active/confirmed slots appear
-      const allBookings = window.store.getBookings().filter(b => b.providerId === provider.id && b.status !== 'cancelled');
+      const allBookings = window.store.getBookings().filter(b => (b.providerId === provider.id || b.provider_id === provider.id) && b.status !== 'cancelled');
       const selectedDate = window.store.getSelectedDate() || window.getDateOffset(0);
 
       // Determine the Monday of the selected week

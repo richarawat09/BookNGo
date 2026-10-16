@@ -167,6 +167,7 @@
       window.store.subscribe('bookings_updated', () => {
         this.updateProviderKpiBar();
         this.renderCustomerBookings();
+        if (window.calendarController) window.calendarController.render();
       });
       window.store.subscribe('waitlist_updated', () => {
         this.updateProviderKpiBar();
@@ -181,6 +182,30 @@
         this.updateProviderKpiBar();
       });
       window.store.subscribe('view_changed', (view) => this.updateViewSwitcherActive(view));
+
+      // Live Cross-Tab & Cross-Interface Synchronization
+      window.addEventListener('storage', (e) => {
+        if (!e.key || e.key.startsWith('bng_')) {
+          if (window.calendarController) window.calendarController.render();
+          this.updateProviderKpiBar();
+          this.renderCustomerBookings();
+          this.renderCustomerMarketplace();
+        }
+      });
+
+      // Refresh data when switching back to tab
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && window.store && window.store.syncFromBackend) {
+          window.store.syncFromBackend();
+        }
+      });
+
+      // Background heartbeat sync to keep interfaces interconnected
+      setInterval(() => {
+        if (window.store && window.store.syncFromBackend) {
+          window.store.syncFromBackend();
+        }
+      }, 8000);
     }
 
     // ========================================================
@@ -226,6 +251,45 @@
       }
 
       if (authPortal) authPortal.classList.add('active');
+    }
+
+    async switchPortal(portalName) {
+      const authPortal = document.getElementById('authPortal');
+      const customerPortal = document.getElementById('customerPortal');
+      const providerPortal = document.getElementById('providerPortal');
+      const adminPortal = document.getElementById('adminPortal');
+
+      [authPortal, customerPortal, providerPortal, adminPortal].forEach(el => {
+        if (el) el.classList.remove('active');
+      });
+
+      if (window.store && window.store.syncFromBackend) {
+        await window.store.syncFromBackend();
+      }
+
+      let session = window.store.getCurrentSession();
+      if (!session) {
+        session = {
+          isLoggedIn: true,
+          role: portalName === 'provider' ? 'provider' : 'customer',
+          name: portalName === 'provider' ? 'Business Owner' : 'Customer',
+          email: portalName === 'provider' ? 'business@bookngo.com' : 'customer@bookngo.com'
+        };
+        window.store.setCurrentSession(session);
+      }
+
+      if (portalName === 'customer') {
+        if (customerPortal) customerPortal.classList.add('active');
+        this.setupCustomerPortal(session);
+        this.showToast('Switched to Customer Booking View', 'info');
+      } else if (portalName === 'provider') {
+        if (providerPortal) providerPortal.classList.add('active');
+        await this.setupProviderPortal(session);
+        this.showToast('Switched to Business Portal (Schedulo Calendar)', 'info');
+      } else if (portalName === 'admin') {
+        if (adminPortal) adminPortal.classList.add('active');
+        this.setupAdminPortal(session);
+      }
     }
 
     logout() {
@@ -602,6 +666,7 @@
       `;
 
       // Populate Client Details (Name & Phone) with session defaults
+      const session = window.store.getCurrentSession() || {};
       const nameInput = document.getElementById('custSlotNameInput');
       if (nameInput) nameInput.value = session.name || '';
       const phoneInput = document.getElementById('custSlotPhoneInput');
@@ -762,11 +827,28 @@
         if (e.stopPropagation) e.stopPropagation();
       }
 
-      const session = window.store.getCurrentSession();
+      let session = window.store.getCurrentSession();
+      const nameInput = document.getElementById('custSlotNameInput');
+      const phoneInput = document.getElementById('custSlotPhoneInput');
+      const custName = (nameInput?.value || '').trim();
+
       if (!session || !session.isLoggedIn) {
-        this.showToast('Please sign in as a customer to book an appointment.', 'error');
-        this.openAuthModal('signin', 'customer');
-        return;
+        if (custName) {
+          session = {
+            isLoggedIn: true,
+            role: 'customer',
+            id: `usr-${Date.now().toString(36)}`,
+            customerId: `usr-${Date.now().toString(36)}`,
+            name: custName,
+            email: `client_${Date.now().toString(36)}@bookngo.com`,
+            phone: (phoneInput?.value || '').trim()
+          };
+          window.store.setCurrentSession(session);
+        } else {
+          this.showToast('Please enter your name to confirm the appointment.', 'warning');
+          if (nameInput) nameInput.focus();
+          return;
+        }
       }
 
       const providerId = this.currentBookingProviderId;
@@ -806,12 +888,10 @@
       }
 
       try {
-        const nameInput = document.getElementById('custSlotNameInput');
-        const phoneInput = document.getElementById('custSlotPhoneInput');
-        const customerName = (nameInput?.value || '').trim() || session.name || 'Customer';
+        const customerName = custName || session.name || 'Customer';
         const customerPhone = (phoneInput?.value || '').trim() || session.phone || '';
-        const customerEmail = session.email;
-        const customerId = (customerName === session.name) ? (session.id || session.customerId) : `usr-guest-${Date.now().toString(36)}`;
+        const customerEmail = session.email || `client_${Date.now().toString(36)}@bookngo.com`;
+        const customerId = session.id || session.customerId || `usr-${Date.now().toString(36)}`;
 
         const newBooking = await window.store.addBooking({
           customerId,
@@ -831,9 +911,15 @@
           notes
         });
 
+        // Link provider in store so switching to provider view shows this business
+        window.store.setCurrentProvider(provider.id);
+
         this.closeModal('customerSlotModal');
         this.showToast(`🎉 Appointment confirmed with ${worker.name} on ${date} at ${time}!`, 'success');
         this.switchCustomerTab('bookings');
+        this.renderCustomerBookings();
+        this.updateProviderKpiBar();
+        if (window.calendarController) window.calendarController.render();
       } catch (err) {
         console.error('[Booking Error]', err);
         this.showToast(err.message || 'Booking failed. Slot may already be reserved.', 'error');
@@ -968,8 +1054,16 @@
       if (!session) return;
 
       const custId = session.id || session.customerId;
-      const allBookings = window.store.getBookings().filter(b => b.customerId === custId || b.customerEmail === session.email);
-      const allWaitlist = window.store.getWaitlist().filter(w => w.customerId === custId || w.customerEmail === session.email);
+      const allBookings = window.store.getBookings().filter(b => 
+        (custId && (b.customerId === custId || b.customer_id === custId)) ||
+        (session.email && (b.customerEmail?.toLowerCase() === session.email.toLowerCase() || b.customer_email?.toLowerCase() === session.email.toLowerCase())) ||
+        (session.name && (b.customerName?.toLowerCase() === session.name.toLowerCase() || b.customer_name?.toLowerCase() === session.name.toLowerCase()))
+      );
+      const allWaitlist = window.store.getWaitlist().filter(w => 
+        (custId && (w.customerId === custId || w.customer_id === custId)) ||
+        (session.email && (w.customerEmail?.toLowerCase() === session.email.toLowerCase() || w.customer_email?.toLowerCase() === session.email.toLowerCase())) ||
+        (session.name && (w.customerName?.toLowerCase() === session.name.toLowerCase() || w.customer_name?.toLowerCase() === session.name.toLowerCase()))
+      );
 
       const todayStr = window.getDateOffset(0);
 
@@ -1083,14 +1177,40 @@
     // ========================================================
     // 4. PROVIDER WORKSPACE (SCHEDULO TIMELINE & WAITLIST)
     // ========================================================
-    setupProviderPortal(session) {
+    async setupProviderPortal(session) {
       const nameEl = document.getElementById('sidebarUserName');
       if (nameEl) nameEl.textContent = session.name || 'Business Owner';
+
+      // Always pull fresh state from SQLite database
+      if (window.store && window.store.syncFromBackend) {
+        await window.store.syncFromBackend();
+      }
+
+      // Populate Provider Selector Dropdown if element exists
+      const providerDropdown = document.getElementById('providerSelectDropdown');
+      const providers = window.store.getProviders();
+      let currentProvider = window.store.getCurrentProvider();
+
+      if (providerDropdown && providers.length > 0) {
+        providerDropdown.innerHTML = providers.map(p => `
+          <option value="${p.id}" ${currentProvider && currentProvider.id === p.id ? 'selected' : ''}>
+            ${p.name} (${p.category})
+          </option>
+        `).join('');
+      }
+
+      if (currentProvider) {
+        const titleEl = document.getElementById('activeProviderName');
+        if (titleEl) titleEl.textContent = currentProvider.name;
+        const catEl = document.getElementById('activeProviderCategory');
+        if (catEl) catEl.textContent = currentProvider.category;
+      }
 
       // Mount calendar and waitlist controllers
       const calendarContainer = document.getElementById('calendarMount');
       if (calendarContainer && window.calendarController) {
         window.calendarController.setContainer(calendarContainer);
+        window.calendarController.render();
       }
 
       const waitlistContainer = document.getElementById('waitlistCardsMount');
@@ -1099,6 +1219,19 @@
       }
 
       this.updateDateDisplay();
+      this.updateProviderKpiBar();
+    }
+
+    handleProviderChange(providerId) {
+      window.store.setCurrentProvider(providerId);
+      const currentProvider = window.store.getCurrentProvider();
+      if (currentProvider) {
+        const titleEl = document.getElementById('activeProviderName');
+        if (titleEl) titleEl.textContent = currentProvider.name;
+        const catEl = document.getElementById('activeProviderCategory');
+        if (catEl) catEl.textContent = currentProvider.category;
+      }
+      if (window.calendarController) window.calendarController.render();
       this.updateProviderKpiBar();
     }
 

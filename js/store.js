@@ -24,10 +24,23 @@
   class Store {
     constructor() {
       this.subscribers = {};
+      this.STORAGE_KEYS = STORAGE_KEYS;
       this.initStorage();
       if (window.api) {
         this.syncFromBackend();
       }
+    }
+
+    setCurrentSession(session) {
+      if (session) {
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(session));
+        if (session.providerId) {
+          localStorage.setItem(STORAGE_KEYS.SELECTED_PROVIDER, session.providerId);
+        }
+      } else {
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify({ isLoggedIn: false }));
+      }
+      this.emit('session_changed', session);
     }
 
     initStorage() {
@@ -571,7 +584,7 @@
 
     getBookingsForDateAndProvider(date, providerId) {
       const all = this.getBookings();
-      return all.filter(b => b.providerId === providerId && b.date === date && b.status !== 'cancelled');
+      return all.filter(b => (b.providerId === providerId || b.provider_id === providerId) && b.date === date && b.status !== 'cancelled');
     }
 
     async addBooking(bookingData) {

@@ -130,6 +130,9 @@
         </div>
 
         <div style="display: flex; align-items: center; gap: 12px;">
+          <button class="btn-primary" style="font-size: 12px; padding: 6px 14px; gap: 6px; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); font-weight: 700; box-shadow: 0 2px 6px rgba(79,70,229,0.25);" onclick="window.app.switchPortal('provider')">
+            <span>🏢</span> <span>Business / Provider Portal →</span>
+          </button>
           <div style="font-size: 13px; font-weight: 600; color: var(--text-main);" id="custUserName">Alex Morgan</div>
           <button class="icon-btn" onclick="window.app.toggleTheme()" title="Toggle Dark/Light Mode">🌙</button>
           <button class="btn-secondary" style="font-size: 12px; padding: 6px 12px;" onclick="window.app.logout()">Sign Out</button>
@@ -207,9 +210,10 @@
           <div style="display: flex; align-items: center; gap: 16px;">
             <div class="brand-badge-container">
               <div class="brand-logo-icon" style="font-size: 16px;">🌸</div>
-              <div>
-                <span class="brand-title" id="activeProviderName" style="font-size: 15px;">My Business Profile</span>
-                <span class="brand-subtitle" id="activeProviderCategory">Service Provider</span>
+              <div style="display: flex; flex-direction: column;">
+                <select id="providerSelectDropdown" class="form-select" style="font-size: 13px; font-weight: 700; padding: 2px 6px; height: 28px; background: transparent; border: 1px solid var(--border-light); cursor: pointer; max-width: 220px;" onchange="window.app.handleProviderChange(this.value)">
+                </select>
+                <span class="brand-subtitle" id="activeProviderCategory" style="font-size: 11px; color: var(--text-muted); margin-top: 1px;">Service Provider</span>
               </div>
             </div>
 
@@ -249,6 +253,9 @@
 
           <!-- Provider Actions -->
           <div class="header-right-actions">
+            <button class="btn-secondary" style="font-size: 12px; padding: 6px 14px; gap: 6px; border-color: var(--primary-300); color: var(--primary-600); font-weight: 700;" onclick="window.app.switchPortal('customer')">
+              <span>🛍️</span> <span>Customer Booking View</span>
+            </button>
             <button class="btn-primary" onclick="window.app.openNewBookingModal()">
               <span>+</span> <span>New Appointment</span>
             </button>
@@ -531,11 +538,11 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <!-- Scripts -->
-  <script src="js/data.js?v=clean_booking_v9"></script>
-  <script src="js/api.js?v=clean_booking_v9"></script>
-  <script src="js/store.js?v=clean_booking_v9"></script>
-  <script src="js/calendar.js?v=clean_booking_v9"></script>
-  <script src="js/waitlist.js?v=clean_booking_v9"></script>
-  <script src="js/app.js?v=clean_booking_v9"></script>
+  <script src="js/data.js?v=clean_booking_v11"></script>
+  <script src="js/api.js?v=clean_booking_v11"></script>
+  <script src="js/store.js?v=clean_booking_v11"></script>
+  <script src="js/calendar.js?v=clean_booking_v11"></script>
+  <script src="js/waitlist.js?v=clean_booking_v11"></script>
+  <script src="js/app.js?v=clean_booking_v11"></script>
 </body>
 </html>
