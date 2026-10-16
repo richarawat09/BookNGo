@@ -601,9 +601,11 @@
         ${workers.map(w => `<option value="${w.id || ''}">${w.name} (${w.title || 'Staff'})</option>`).join('')}
       `;
 
-      // Clear previous notes
-      const notesInput = document.getElementById('custSlotNotesInput');
-      if (notesInput) notesInput.value = '';
+      // Populate Client Details (Name & Phone) with session defaults
+      const nameInput = document.getElementById('custSlotNameInput');
+      if (nameInput) nameInput.value = session.name || '';
+      const phoneInput = document.getElementById('custSlotPhoneInput');
+      if (phoneInput) phoneInput.value = session.phone || '';
 
       // Set target date with Month Calendar Widget
       const defaultDate = window.getDateOffset(0);
@@ -804,10 +806,12 @@
       }
 
       try {
-        const customerId = session.id || session.customerId;
-        const customerName = session.name || 'Customer';
+        const nameInput = document.getElementById('custSlotNameInput');
+        const phoneInput = document.getElementById('custSlotPhoneInput');
+        const customerName = (nameInput?.value || '').trim() || session.name || 'Customer';
+        const customerPhone = (phoneInput?.value || '').trim() || session.phone || '';
         const customerEmail = session.email;
-        const customerPhone = session.phone || '';
+        const customerId = (customerName === session.name) ? (session.id || session.customerId) : `usr-guest-${Date.now().toString(36)}`;
 
         const newBooking = await window.store.addBooking({
           customerId,
@@ -1267,7 +1271,10 @@
       const customerName = (nameInput?.value || '').trim() || (opt?.dataset.name) || 'Walk-in Client';
       const customerPhone = (phoneInput?.value || '').trim() || (opt?.dataset.phone) || '';
       const customerEmail = (emailInput?.value || '').trim() || (opt?.dataset.email) || '';
-      const customerId = (opt && opt.value) ? opt.value : 'walkin';
+      let customerId = 'walkin';
+      if (opt && opt.value && opt.dataset.name && opt.dataset.name === customerName) {
+        customerId = opt.value;
+      }
 
       const srvSelect = document.getElementById('nbServiceSelect');
       const srvOpt = srvSelect ? srvSelect.options[srvSelect.selectedIndex] : null;
