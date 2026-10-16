@@ -1125,8 +1125,8 @@
     // Provider Modals
     openNewBookingModal(workerId, timeStr) {
       const provider = window.store.getCurrentProvider();
-      const services = provider.services || [];
-      const workers = provider.workers || [];
+      const services = provider?.services || [];
+      const workers = provider?.workers || [];
       const customers = window.store.getCustomers();
 
       const selectWorker = document.getElementById('nbWorkerSelect');
@@ -1145,61 +1145,94 @@
 
       const selectCustomer = document.getElementById('nbCustomerSelect');
       if (selectCustomer) {
-        selectCustomer.innerHTML = customers.map(c => `
-          <option value="${c.id}" data-name="${c.name}" data-phone="${c.phone}" data-email="${c.email}">${c.name} (${c.phone})</option>
+        let custHtml = customers.map(c => `
+          <option value="${c.id}" data-name="${c.name}" data-phone="${c.phone || ''}" data-email="${c.email || ''}">${c.name} (${c.phone || c.email || 'Client'})</option>
         `).join('');
+        if (customers.length === 0) {
+          custHtml = `<option value="walkin" data-name="Walk-in Client" data-phone="" data-email="">Walk-in Client</option>`;
+        }
+        selectCustomer.innerHTML = custHtml;
       }
 
-      document.getElementById('nbDateInput').value = window.store.getSelectedDate();
-      document.getElementById('nbTimeInput').value = timeStr || '10:00';
+      const dateInput = document.getElementById('nbDateInput');
+      if (dateInput) dateInput.value = window.store.getSelectedDate();
+
+      const timeInput = document.getElementById('nbTimeInput');
+      if (timeInput) timeInput.value = timeStr || '10:00';
+
+      const notesInput = document.getElementById('nbNotesInput');
+      if (notesInput) notesInput.value = '';
+
       this.openModal('newBookingModal');
     }
 
-    submitNewBooking(e) {
+    async submitNewBooking(e) {
       e.preventDefault();
       const provider = window.store.getCurrentProvider();
+      if (!provider) {
+        this.showToast('Provider profile not found.', 'error');
+        return;
+      }
 
       const custSelect = document.getElementById('nbCustomerSelect');
-      const opt = custSelect.options[custSelect.selectedIndex];
-      const customerName = opt.getAttribute('data-name');
-      const customerPhone = opt.getAttribute('data-phone');
-      const customerEmail = opt.getAttribute('data-email');
+      const opt = custSelect ? custSelect.options[custSelect.selectedIndex] : null;
+      const customerName = opt ? (opt.getAttribute('data-name') || opt.text) : 'Client';
+      const customerPhone = opt ? (opt.getAttribute('data-phone') || '') : '';
+      const customerEmail = opt ? (opt.getAttribute('data-email') || '') : '';
+      const customerId = custSelect ? custSelect.value : 'walkin';
 
       const srvSelect = document.getElementById('nbServiceSelect');
-      const srvOpt = srvSelect.options[srvSelect.selectedIndex];
-      const serviceId = srvSelect.value;
-      const serviceName = srvOpt.text.split('—')[0].trim();
-      const price = Number(srvOpt.getAttribute('data-price')) || 50;
-      const duration = Number(srvOpt.getAttribute('data-duration')) || 45;
+      const srvOpt = srvSelect ? srvSelect.options[srvSelect.selectedIndex] : null;
+      const serviceId = srvSelect ? srvSelect.value : (provider.services[0]?.id || null);
+      const serviceName = srvOpt ? srvOpt.text.split('—')[0].trim() : 'Service';
+      const price = Number(srvOpt?.getAttribute('data-price')) || 50;
+      const duration = Number(srvOpt?.getAttribute('data-duration')) || 45;
 
       const workerSelect = document.getElementById('nbWorkerSelect');
-      const workerId = workerSelect.value;
-      const workerName = workerSelect.options[workerSelect.selectedIndex].text.split('(')[0].trim();
+      const workerOpt = workerSelect ? workerSelect.options[workerSelect.selectedIndex] : null;
+      const workerId = workerSelect ? workerSelect.value : (provider.workers[0]?.id || null);
+      const workerName = workerOpt ? workerOpt.text.split('(')[0].trim() : 'Specialist';
 
-      const date = document.getElementById('nbDateInput').value;
-      const time = document.getElementById('nbTimeInput').value;
-      const notes = document.getElementById('nbNotesInput').value;
+      const date = document.getElementById('nbDateInput')?.value || window.store.getSelectedDate();
+      const time = document.getElementById('nbTimeInput')?.value || '10:00';
+      const notes = document.getElementById('nbNotesInput')?.value || '';
 
-      const booking = window.store.addBooking({
-        customerId: custSelect.value,
-        customerName,
-        customerPhone,
-        customerEmail,
-        providerId: provider.id,
-        providerName: provider.name,
-        serviceId,
-        serviceName,
-        workerId,
-        workerName,
-        date,
-        time,
-        duration,
-        price,
-        notes
-      });
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const origText = submitBtn ? submitBtn.textContent : 'Confirm Slot';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Confirming...';
+      }
 
-      this.closeModal('newBookingModal');
-      this.showToast(`✅ Booked ${booking.customerName} on ${booking.date} at ${booking.time}!`, 'success');
+      try {
+        const booking = await window.store.addBooking({
+          customerId,
+          customerName,
+          customerPhone,
+          customerEmail,
+          providerId: provider.id,
+          providerName: provider.name,
+          serviceId,
+          serviceName,
+          workerId,
+          workerName,
+          date,
+          time,
+          duration,
+          price,
+          notes
+        });
+
+        this.closeModal('newBookingModal');
+        this.showToast(`✅ Booked ${booking.customerName} on ${booking.date} at ${booking.time}!`, 'success');
+      } catch (err) {
+        this.showToast(err.message || 'Failed to book slot. Slot may already be reserved.', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = origText;
+        }
+      }
     }
 
     openAddWaitlistModal() {
@@ -1220,7 +1253,7 @@
       this.openModal('addWaitlistModal');
     }
 
-    submitAddWaitlist(e) {
+    async submitAddWaitlist(e) {
       e.preventDefault();
       const provider = window.store.getCurrentProvider();
 
@@ -1242,29 +1275,45 @@
       const preferredDate = document.getElementById('wlDateInput').value;
       const preferredTimeRange = document.getElementById('wlTimeWindowSelect').value;
       const priority = document.getElementById('wlPrioritySelect').value;
-      const notes = document.getElementById('wlNotesInput').value;
+      const notes = document.getElementById('wlNotesInput')?.value || '';
 
-      const newEntry = window.store.addWaitlistEntry({
-        providerId: provider.id,
-        providerName: provider.name,
-        customerName,
-        customerPhone,
-        customerEmail,
-        customerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-        serviceId,
-        serviceName,
-        duration,
-        price,
-        workerId,
-        workerName,
-        preferredDate,
-        preferredTimeRange,
-        priority,
-        notes
-      });
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const origText = submitBtn ? submitBtn.textContent : 'Add to Standby Queue';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+      }
 
-      this.closeModal('addWaitlistModal');
-      this.showToast(`⏳ ${customerName} added to waitlist queue as #${newEntry.position}!`, 'success');
+      try {
+        const newEntry = await window.store.addWaitlistEntry({
+          providerId: provider.id,
+          providerName: provider.name,
+          customerName,
+          customerPhone,
+          customerEmail,
+          customerAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
+          serviceId,
+          serviceName,
+          duration,
+          price,
+          workerId,
+          workerName,
+          preferredDate,
+          preferredTimeRange,
+          priority,
+          notes
+        });
+
+        this.closeModal('addWaitlistModal');
+        this.showToast(`⏳ ${customerName} added to waitlist queue as #${newEntry.position}!`, 'success');
+      } catch (err) {
+        this.showToast(err.message || 'Failed to add to waitlist.', 'error');
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = origText;
+        }
+      }
     }
 
     openAppointmentDrawer(bookingId) {

@@ -121,6 +121,10 @@
       return this.request(`/providers/${providerId}`);
     }
 
+    async getCustomers() {
+      return this.request('/customers');
+    }
+
     // --- Bookings ---
     async getBookings(params = {}) {
       const q = new URLSearchParams();

@@ -113,6 +113,12 @@
           localStorage.setItem(STORAGE_KEYS.WAITLIST, JSON.stringify(wlRes.waitlist));
           this.emit('waitlist_updated', wlRes.waitlist);
         }
+
+        const custRes = await window.api.getCustomers();
+        if (custRes && custRes.success && Array.isArray(custRes.customers)) {
+          localStorage.setItem(STORAGE_KEYS.CUSTOMERS, JSON.stringify(custRes.customers));
+          this.emit('customers_updated', custRes.customers);
+        }
       } catch (err) {
         console.warn('[Store] Backend sync failed:', err);
       }

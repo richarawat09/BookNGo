@@ -582,6 +582,16 @@ def get_provider_by_user_id(user_id):
     return get_provider_by_id(row['id'])
 
 
+def get_all_customers():
+    """Returns list of registered customers from SQL users table."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT id, name, email, phone, avatar, created_at FROM users WHERE role = 'customer' ORDER BY name ASC;")
+    rows = [dict(r) for r in cur.fetchall()]
+    conn.close()
+    return rows
+
+
 # ---------------------------------------------------------------------------
 # Booking Operations
 # ---------------------------------------------------------------------------
@@ -596,7 +606,44 @@ def create_booking(customer_id, provider_id, service_id, worker_id,
     booking_id = f"bkg-{secrets.token_hex(6)}"
     booking_code = f"BNG-{secrets.token_hex(3).upper()}"
 
-    # Check worker collision at same date and time
+    # 1. Resolve or create customer in users table to satisfy foreign key constraint
+    cur.execute("SELECT id FROM users WHERE id = ?;", (customer_id,))
+    matched_cust = cur.fetchone()
+    if not matched_cust and customer_email:
+        cur.execute("SELECT id FROM users WHERE email = ?;", (customer_email.lower().strip(),))
+        matched_cust = cur.fetchone()
+        if matched_cust:
+            customer_id = matched_cust['id']
+
+    if not matched_cust:
+        # User not found in users table yet; create them so foreign key constraint is satisfied
+        new_cust_id = customer_id if (customer_id and customer_id.startswith('usr-')) else f"usr-{secrets.token_hex(6)}"
+        clean_email = (customer_email or f"client_{secrets.token_hex(4)}@bookngo.com").lower().strip()
+        cur.execute("SELECT id FROM users WHERE email = ?;", (clean_email,))
+        existing_email_user = cur.fetchone()
+        if existing_email_user:
+            customer_id = existing_email_user['id']
+        else:
+            dummy_hash = generate_password_hash("clientpass123")
+            cur.execute("""
+                INSERT INTO users (id, email, password_hash, role, name, phone)
+                VALUES (?, ?, ?, 'customer', ?, ?);
+            """, (new_cust_id, clean_email, dummy_hash, customer_name or 'Client', customer_phone or ''))
+            conn.commit()
+            customer_id = new_cust_id
+
+    # 2. Check service_id & worker_id validity against database tables
+    if service_id:
+        cur.execute("SELECT id FROM services WHERE id = ?;", (service_id,))
+        if not cur.fetchone():
+            service_id = None
+
+    if worker_id:
+        cur.execute("SELECT id FROM workers WHERE id = ?;", (worker_id,))
+        if not cur.fetchone():
+            worker_id = None
+
+    # 3. Check worker collision at same date and time
     if worker_id:
         cur.execute("""
             SELECT id FROM bookings
@@ -678,6 +725,25 @@ def add_waitlist_entry(customer_id, provider_id, service_id,
     cur = conn.cursor()
 
     wl_id = f"wl-{secrets.token_hex(6)}"
+
+    # Resolve or create customer in users table to satisfy foreign key constraint
+    cur.execute("SELECT id FROM users WHERE id = ?;", (customer_id,))
+    matched_cust = cur.fetchone()
+    if not matched_cust:
+        new_cust_id = customer_id if (customer_id and str(customer_id).startswith('usr-')) else f"usr-{secrets.token_hex(6)}"
+        clean_email = f"client_{secrets.token_hex(4)}@bookngo.com"
+        dummy_hash = generate_password_hash("clientpass123")
+        cur.execute("""
+            INSERT INTO users (id, email, password_hash, role, name, phone)
+            VALUES (?, ?, ?, 'customer', ?, ?);
+        """, (new_cust_id, clean_email, dummy_hash, customer_name or 'Client', customer_phone or ''))
+        conn.commit()
+        customer_id = new_cust_id
+
+    if service_id:
+        cur.execute("SELECT id FROM services WHERE id = ?;", (service_id,))
+        if not cur.fetchone():
+            service_id = None
 
     # Determine position
     cur.execute("""

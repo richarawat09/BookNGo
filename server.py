@@ -214,6 +214,12 @@ def get_provider(provider_id):
     return jsonify({"success": True, "provider": provider})
 
 
+@app.route('/api/customers', methods=['GET'])
+def get_customers_endpoint():
+    customers = database.get_all_customers()
+    return jsonify({"success": True, "customers": customers})
+
+
 # ---------------------------------------------------------------------------
 # Bookings Endpoints
 # ---------------------------------------------------------------------------
